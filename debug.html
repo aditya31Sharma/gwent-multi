@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gwent Multiplayer — Connection Debug</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #111;
+  color: #ddd;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+h1 { color: #c8a862; font-size: 1.4rem; margin-bottom: 16px; }
+.panel {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 16px;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 12px;
+}
+.panel h2 { font-size: 0.9rem; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+button {
+  background: #2a1a08;
+  border: 1px solid #c8a862;
+  color: #c8a862;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 3px;
+  margin: 4px;
+}
+button:hover { background: #3a2a10; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+input {
+  background: #0a0a0a;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 10px;
+  font-size: 1.2rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+  width: 160px;
+  border-radius: 3px;
+  outline: none;
+}
+input:focus { border-color: #c8a862; }
+.room-code {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f0d090;
+  letter-spacing: 0.4em;
+  text-align: center;
+  padding: 8px 0;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #444;
+  flex-shrink: 0;
+}
+.dot.green { background: #4c4; }
+.dot.yellow { background: #ca4; }
+.dot.red { background: #c44; }
+#log {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-ok { color: #6c6; }
+.log-err { color: #c66; }
+.log-info { color: #888; }
+.log-data { color: #6ac; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.hidden { display: none; }
+#ping-result { font-size: 0.85rem; color: #6ac; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Connection Debug Dashboard</h1>
+
+<!-- Step 1: Choose role -->
+<div class="panel" id="p-choose">
+  <h2>Step 1 — Choose Role</h2>
+  <div class="actions">
+    <button onclick="startHost()">Create Room (Host)</button>
+    <button onclick="showJoin()">Join Room (Guest)</button>
+  </div>
+  <div id="join-section" class="hidden" style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+    <input id="code-input" maxlength="6" placeholder="CODE" autocomplete="off" spellcheck="false"/>
+    <button onclick="startGuest()">Connect</button>
+  </div>
+</div>
+
+<!-- Step 2: Connection status -->
+<div class="panel" id="p-status">
+  <h2>Step 2 — Connection Status</h2>
+  <div class="status"><div class="dot" id="dot-peer"></div><span id="lbl-peer">Peer: not started</span></div>
+  <div class="status"><div class="dot" id="dot-conn"></div><span id="lbl-conn">DataChannel: not connected</span></div>
+  <div id="room-display" class="hidden">
+    <div style="color:#888;font-size:0.8rem;margin-top:8px;">Room Code:</div>
+    <div class="room-code" id="room-code">------</div>
+  </div>
+</div>
+
+<!-- Step 3: Test messaging -->
+<div class="panel" id="p-test">
+  <h2>Step 3 — Test Data Channel</h2>
+  <div class="actions">
+    <button id="btn-ping" onclick="sendPing()" disabled>Send Ping</button>
+    <button id="btn-msg" onclick="sendTestMsg()" disabled>Send "Hello"</button>
+  </div>
+  <div id="ping-result"></div>
+</div>
+
+<!-- Live log -->
+<div class="panel">
+  <h2>Live Log</h2>
+  <div id="log"></div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const logEl = document.getElementById('log');
+let peer = null;
+let conn = null;
+let pingStart = 0;
+
+function log(msg, cls) {
+  const t = new Date().toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits:3});
+  const line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = `[${t}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setDot(id, color) {
+  document.getElementById(id).className = 'dot ' + color;
+}
+
+function setLabel(id, text) {
+  document.getElementById(id).textContent = text;
+}
+
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function showJoin() {
+  const el = document.getElementById('join-section');
+  el.classList.remove('hidden');
+  el.style.display = 'flex';
+  document.getElementById('code-input').focus();
+}
+
+// ─── Host ──────────────────────────────────────────────────────────────────────
+function startHost() {
+  const code = generateCode();
+  log('Role: HOST', 'log-info');
+  log('Generated room code: ' + code, 'log-info');
+
+  document.getElementById('p-choose').style.opacity = '0.4';
+  document.getElementById('p-choose').style.pointerEvents = 'none';
+
+  setDot('dot-peer', 'yellow');
+  setLabel('lbl-peer', 'Peer: connecting to signaling server…');
+  log('Creating Peer with id=' + code + '…');
+
+  peer = new Peer(code, {
+    debug: 2,
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]}
+  });
+
+  peer.on('open', id => {
+    setDot('dot-peer', 'green');
+    setLabel('lbl-peer', 'Peer: registered as ' + id);
+    log('Peer OPEN — id=' + id, 'log-ok');
+
+    document.getElementById('room-display').classList.remove('hidden');
+    document.getElementById('room-code').textContent = id;
+  });
+
+  peer.on('error', e => {
+    log('Peer ERROR: type=' + e.type + ' msg=' + e.message, 'log-err');
+    setDot('dot-peer', 'red');
+    setLabel('lbl-peer', 'Peer: error — ' + e.type);
+
+    if (e.type === 'unavailable-id') {
+      log('ID collision — retrying with new code…', 'log-info');
+      peer.destroy();
+      startHost();
+    }
+  });
+
+  peer.on('disconnected', () => {
+    log('Peer DISCONNECTED from signaling server', 'log-err');
+    setDot('dot-peer', 'red');
+  });
+
+  peer.on('close', () => {
+    log('Peer CLOSED', 'log-err');
+    setDot('dot-peer', 'red');
+  });
+
+  peer.on('connection', c => {
+    log('Incoming connection from ' + c.peer, 'log-ok');
+    setupConn(c);
+  });
+
+  log('Waiting for guest to connect…', 'log-info');
+}
+
+// ─── Guest ─────────────────────────────────────────────────────────────────────
+function startGuest() {
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  if (code.length !== 6) { alert('Enter 6-char code'); return; }
+
+  log('Role: GUEST', 'log-info');
+  log('Target room code: ' + code, 'log-info');
+
+  document.getElementById('p-choose').style.opacity = '0.4';
+  document.getElementById('p-choose').style.pointerEvents = 'none';
+
+  setDot('dot-peer', 'yellow');
+  setLabel('lbl-peer', 'Peer: connecting to signaling server…');
+  log('Creating Peer (random id)…');
+
+  peer = new Peer({
+    debug: 2,
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]}
+  });
+
+  peer.on('open', id => {
+    setDot('dot-peer', 'green');
+    setLabel('lbl-peer', 'Peer: registered as ' + id);
+    log('Peer OPEN — id=' + id, 'log-ok');
+    log('Connecting to host peer ' + code + '…');
+
+    setDot('dot-conn', 'yellow');
+    setLabel('lbl-conn', 'DataChannel: connecting…');
+
+    const c = peer.connect(code, { reliable: true });
+    setupConn(c);
+
+    // Timeout
+    setTimeout(() => {
+      if (!conn || !conn.open) {
+        log('Connection TIMEOUT after 15s', 'log-err');
+        setDot('dot-conn', 'red');
+        setLabel('lbl-conn', 'DataChannel: timeout');
+      }
+    }, 15000);
+  });
+
+  peer.on('error', e => {
+    log('Peer ERROR: type=' + e.type + ' msg=' + e.message, 'log-err');
+    setDot('dot-peer', 'red');
+    setLabel('lbl-peer', 'Peer: error — ' + e.type);
+  });
+
+  peer.on('disconnected', () => {
+    log('Peer DISCONNECTED from signaling server', 'log-err');
+    setDot('dot-peer', 'red');
+  });
+
+  peer.on('close', () => {
+    log('Peer CLOSED', 'log-err');
+    setDot('dot-peer', 'red');
+  });
+}
+
+// ─── Shared connection setup ───────────────────────────────────────────────────
+function setupConn(c) {
+  setDot('dot-conn', 'yellow');
+  setLabel('lbl-conn', 'DataChannel: negotiating…');
+  log('DataChannel created (label=' + c.label + ', reliable=' + c.reliable + ')', 'log-info');
+
+  c.on('open', () => {
+    conn = c;
+    setDot('dot-conn', 'green');
+    setLabel('lbl-conn', 'DataChannel: OPEN ✓');
+    log('DataChannel OPEN — ready to exchange data!', 'log-ok');
+
+    document.getElementById('btn-ping').disabled = false;
+    document.getElementById('btn-msg').disabled = false;
+  });
+
+  c.on('data', data => {
+    log('Received: ' + data, 'log-data');
+
+    if (data === 'ping') {
+      c.send('pong');
+      log('Replied: pong', 'log-data');
+    } else if (data === 'pong') {
+      const ms = Date.now() - pingStart;
+      document.getElementById('ping-result').textContent = 'Pong received! RTT: ' + ms + 'ms';
+      log('Pong RTT: ' + ms + 'ms', 'log-ok');
+    }
+  });
+
+  c.on('error', e => {
+    log('DataChannel ERROR: ' + e.message, 'log-err');
+    setDot('dot-conn', 'red');
+    setLabel('lbl-conn', 'DataChannel: error');
+  });
+
+  c.on('close', () => {
+    log('DataChannel CLOSED', 'log-err');
+    setDot('dot-conn', 'red');
+    setLabel('lbl-conn', 'DataChannel: closed');
+    document.getElementById('btn-ping').disabled = true;
+    document.getElementById('btn-msg').disabled = true;
+  });
+}
+
+function sendPing() {
+  if (!conn || !conn.open) return;
+  pingStart = Date.now();
+  conn.send('ping');
+  log('Sent: ping', 'log-data');
+}
+
+function sendTestMsg() {
+  if (!conn || !conn.open) return;
+  conn.send('Hello from ' + (peer.id.length === 6 ? 'HOST' : 'GUEST') + '!');
+  log('Sent: Hello', 'log-data');
+}
+
+log('Dashboard ready. Choose a role to begin.', 'log-info');
+</script>
+
+</body>
+</html>
