@@ -18,10 +18,73 @@
 
 <div id="youtube"></div>
 
-<main>
+<!-- ── Multiplayer lobby overlay ─────────────────────────────────────── -->
+<div id="mp-lobby" class="hide">
+
+	<!-- Landing: Create Game / Join Game / Play Solo -->
+	<div id="mp-landing" class="mp-screen">
+		<div class="mp-logo">GWENT</div>
+		<h2 class="mp-subtitle">Multiplayer</h2>
+		<button id="mp-btn-host" class="mp-btn mp-btn-primary">Create Game</button>
+		<button id="mp-btn-guest" class="mp-btn">Join Game</button>
+		<button id="mp-btn-solo" class="mp-btn mp-btn-ghost">Play Solo vs AI</button>
+	</div>
+
+	<!-- Join: enter room code -->
+	<div id="mp-join" class="mp-screen hide">
+		<h2 class="mp-screen-title">Join Game</h2>
+		<p class="mp-hint">Enter the 6-character room code</p>
+		<input id="mp-room-input" class="mp-code-input" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false" />
+		<button id="mp-join-btn" class="mp-btn mp-btn-primary">Join</button>
+	</div>
+
+	<!-- Host: boot server + waiting for guest -->
+	<div id="mp-host" class="mp-screen hide">
+		<h2 class="mp-screen-title">Host Game</h2>
+		<div id="mp-host-booting">
+			<button id="mp-boot-btn" class="mp-btn mp-btn-primary">Boot Server</button>
+		</div>
+		<div id="mp-host-waiting" class="hide">
+			<p class="mp-hint">Share this code with your opponent:</p>
+			<div id="mp-room-code" class="mp-room-code">——————</div>
+			<p class="mp-hint mp-pulse">Waiting for opponent to join...</p>
+		</div>
+	</div>
+
+	<!-- Guest: connecting spinner -->
+	<div id="mp-connecting" class="mp-screen hide">
+		<h2 class="mp-screen-title">Connecting</h2>
+		<p class="mp-hint">Joining room: <strong id="mp-connect-code"></strong></p>
+		<p class="mp-hint mp-pulse">Please wait...</p>
+	</div>
+
+	<!-- Waiting overlay (guest waiting for host / redraw phase) -->
+	<div id="mp-waiting" class="mp-screen hide">
+		<p class="mp-hint mp-pulse">Waiting for opponent...</p>
+	</div>
+
+	<!-- Agile row picker -->
+	<div id="mp-row-picker" class="mp-screen hide">
+		<h2 class="mp-screen-title">Choose Row</h2>
+		<button class="mp-btn" onclick="guestPlayCard(window._agileCard,'close');document.getElementById('mp-row-picker').classList.add('hide');">Close Combat</button>
+		<button class="mp-btn" onclick="guestPlayCard(window._agileCard,'ranged');document.getElementById('mp-row-picker').classList.add('hide');">Ranged</button>
+	</div>
+
+	<!-- Error display -->
+	<div id="mp-error" class="mp-screen hide">
+		<p class="mp-error-icon">⚠</p>
+		<p id="mp-error-msg" class="mp-hint"></p>
+		<button class="mp-btn" onclick="window.location.href=window.location.pathname">Back to Menu</button>
+	</div>
+
+</div>
+
+<main class="game-wrapper">
 
 	<section id="click-background" class="noclick"></section>
 
+	<div class="opponent-stats-bar"><!-- sticky top on mobile --></div>
+	<div class="board-scroll-zone"><!-- scrollable board area on mobile -->
 	<section id="panel-left" class="panel">
 	
 		<div id="leader-op" class="leader-box">
@@ -130,11 +193,14 @@
 			</div>
 		</section>
 		
-		<section id="field-hand">
+		</div><!-- end board-scroll-zone -->
+	<div class="player-hand-bar"><!-- sticky bottom on mobile -->
+	<section id="field-hand">
 			<div id="hand-row" class="card-container card-selectable">
 			</div>
 		</section>
 	</section>
+	</div><!-- end player-hand-bar -->
 	
 	<section id="panel-right" class="panel">
 		<div id="grave-op" class="cardpile">
@@ -283,6 +349,10 @@
 <script type="text/javascript" src="factions.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script type="text/javascript" src="gwent.js"></script>
+<!-- PeerJS for WebRTC P2P (loaded after gwent.js so globals are available) -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="text/javascript" src="multiplayer.js"></script>
+<script type="text/javascript" src="lobby.js"></script>
 </body>
 
 </html>

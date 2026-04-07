@@ -1325,3 +1325,220 @@ main { background-image: url('img/boardtest8.png'); }
 .noclick {
 	pointer-events: none;
 }
+/* ═══════════════════════════════════════════════════════════════════
+   MULTIPLAYER LOBBY OVERLAY
+   ═══════════════════════════════════════════════════════════════════ */
+
+#mp-lobby {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: radial-gradient(ellipse at center, #1a0f00 0%, #0a0600 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.mp-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.mp-logo {
+  font-size: 3rem;
+  font-weight: bold;
+  letter-spacing: 0.25em;
+  color: #c8a862;
+  text-shadow: 0 0 20px rgba(200,168,98,0.5);
+}
+
+.mp-subtitle {
+  color: #9a7a42;
+  font-size: 1.1rem;
+  margin: -8px 0 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mp-screen-title {
+  color: #c8a862;
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.mp-hint {
+  color: #8a7050;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.mp-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid #5a4020;
+  background: #1e1208;
+  color: #c8a862;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mp-btn:hover {
+  background: #2e1c10;
+  border-color: #c8a862;
+}
+
+.mp-btn-primary {
+  background: #3a2010;
+  border-color: #c8a862;
+  color: #f0d090;
+}
+
+.mp-btn-primary:hover {
+  background: #5a3018;
+}
+
+.mp-btn-ghost {
+  background: transparent;
+  border-color: #3a2a10;
+  color: #7a6040;
+  font-size: 0.85rem;
+}
+
+.mp-btn-ghost:hover {
+  border-color: #8a7050;
+  color: #a08050;
+}
+
+.mp-code-input {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.6rem;
+  text-align: center;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  background: #0e0a04;
+  border: 1px solid #5a4020;
+  color: #c8a862;
+  border-radius: 2px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.mp-code-input:focus {
+  border-color: #c8a862;
+}
+
+.mp-room-code {
+  font-size: 2.8rem;
+  font-weight: bold;
+  letter-spacing: 0.35em;
+  color: #f0d090;
+  background: #0e0a04;
+  border: 1px solid #c8a862;
+  border-radius: 2px;
+  padding: 12px 24px;
+  text-shadow: 0 0 10px rgba(240,208,144,0.4);
+  user-select: all;
+}
+
+.mp-pulse {
+  animation: mp-pulse-anim 1.8s ease-in-out infinite;
+}
+
+@keyframes mp-pulse-anim {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1;   }
+}
+
+.mp-error-icon {
+  font-size: 2.5rem;
+  color: #c04020;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT — Mobile Portrait ↔ Desktop/Landscape
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Fly-in animation when opponent plays a card on the guest's screen */
+@keyframes card-fly-in {
+  from { transform: translateY(-40px) scale(0.8); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);   opacity: 1; }
+}
+.card-fly-in {
+  animation: card-fly-in 0.3s ease-out;
+}
+
+/* Mobile portrait: wrap layout */
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .opponent-stats-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-shrink: 0;
+    background: rgba(10,6,0,0.95);
+  }
+
+  .board-scroll-zone {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .player-hand-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    flex-shrink: 0;
+    background: rgba(10,6,0,0.95);
+    overflow-x: auto;
+  }
+
+  /* Cards in each row wrap to a second line on mobile when the row fills up */
+  .field-row .row-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* Minimum tap targets for cards on mobile */
+  .card {
+    min-width: 44px;
+    min-height: 60px;
+  }
+}
+
+/* Desktop / landscape: revert to original single-line layout */
+@media (min-width: 768px), (orientation: landscape) {
+  .board-scroll-zone {
+    overflow: visible;
+  }
+
+  .field-row .row-cards {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .opponent-stats-bar,
+  .player-hand-bar {
+    position: static;
+  }
+}

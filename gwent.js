@@ -426,6 +426,80 @@ class ControllerAI {
 	}
 }
 
+// Waits for a single message from the guest via the data channel.
+// Rejects after timeoutMs (default 60s) so the host doesn't freeze if guest
+// tabs out (known iOS Safari behaviour).
+function waitForMessage(timeoutMs = 60000) {
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+		multiplayer.dataChannel.once('data', data => {
+			clearTimeout(timer);
+			resolve(JSON.parse(data));
+		});
+	});
+}
+
+// Routes the guest player's turns over the data channel.
+// Replaces ControllerAI for player_op in multiplayer mode.
+class ControllerNetwork {
+	constructor(player) {
+		this.player = player;
+	}
+
+	// Await one action from the guest, execute it on the host.
+	// The action methods (playCard, passRound, activateLeader) all call
+	// player.endTurn() → game.endTurn() internally, so we must NOT call
+	// multiplayer.sync() here — Game.endTurn() is the single sync point.
+	async startTurn(player) {
+		let msg;
+		try {
+			msg = await waitForMessage();
+		} catch (e) {
+			// Timeout or disconnect — show message, leave turn open
+			ui.notification('conn-lost', 1200);
+			return;
+		}
+
+		if (msg.action === 'playCard') {
+			const card = player.hand.cards.find(c => c.id() === msg.cardId);
+			if (!card) return;
+			if (msg.row) {
+				// Agile card — guest specified the row
+				const row = board.getRow(card, msg.row, player);
+				await player.playCardToRow(card, row);
+			} else {
+				await player.playCard(card);
+			}
+		} else if (msg.action === 'useLeader') {
+			await player.activateLeader();
+		} else if (msg.action === 'pass') {
+			await player.passRound();
+		}
+		// NOTE: do NOT call multiplayer.sync() here.
+	}
+
+	// Called by Game.initialRedraw() in place of ControllerAI.redraw().
+	// Sends the guest their initial hand, then processes their card-swap
+	// messages until they send 'ready'.
+	async redraw() {
+		multiplayer.phase = 'redraw';
+		await multiplayer.sync(); // guest sees their 10-card hand
+		let msg;
+		let swaps = 0;
+		do {
+			msg = await waitForMessage(120000); // 2-min timeout for redraw
+			if (msg.action === 'redrawCard' && swaps < 2) {
+				const card = player_op.hand.cards.find(c => c.id() === msg.cardId);
+				if (card) {
+					await player_op.deck.swap(card, card.removeCard(-1));
+					swaps++;
+				}
+				await multiplayer.sync(); // update guest's hand after each swap
+			}
+		} while (msg.action !== 'ready');
+	}
+}
+
 // Can make actions during turns like playing cards that it owns
 class Player {
 	constructor(id, name, deck) {
@@ -1337,9 +1411,17 @@ class Game {
 	
 	// Allows the player to swap out up to two cards from their iniitial hand
 	async initialRedraw(){
-		for (let i=0; i< 2; i++)
-			player_op.controller.redraw();
-		await ui.queueCarousel(player_me.hand, 2, async (c, i) => await player_me.deck.swap(c, c.removeCard(i)), c => true, true, true, "Choose up to 2 cards to redraw.");
+		if (typeof multiplayer !== 'undefined' && multiplayer.active && !multiplayer.isGuest) {
+			// Multiplayer: host does their redraw via carousel, guest's via ControllerNetwork.redraw()
+			const guestRedrawPromise = player_op.controller.redraw();
+			await ui.queueCarousel(player_me.hand, 2, async (c, i) => await player_me.deck.swap(c, c.removeCard(i)), c => true, true, true, "Choose up to 2 cards to redraw.");
+			await guestRedrawPromise;
+		} else {
+			// Single-player: AI does its redraw synchronously
+			for (let i=0; i< 2; i++)
+				player_op.controller.redraw();
+			await ui.queueCarousel(player_me.hand, 2, async (c, i) => await player_me.deck.swap(c, c.removeCard(i)), c => true, true, true, "Choose up to 2 cards to redraw.");
+		}
 		ui.enablePlayer(false);
 		game.startRound();
 	}
@@ -1386,6 +1468,11 @@ class Game {
 		await this.runEffects(this.turnEnd);
 		if (this.currPlayer.passed)
 			await ui.notification(this.currPlayer.tag + "-pass", 1200);
+		// Sync game state to guest after every turn (single sync point for playing phase)
+		if (typeof multiplayer !== 'undefined' && multiplayer.active && !multiplayer.isGuest) {
+			multiplayer.phase = 'playing';
+			await multiplayer.sync();
+		}
 		if (player_op.passed && player_me.passed)
 			this.endRound();
 		else
@@ -1418,10 +1505,19 @@ class Game {
 		else
 			await ui.notification("draw-round", 1200);
 		
-		if (player_me.health === 0 || player_op.health === 0)
+		if (player_me.health === 0 || player_op.health === 0) {
+			if (typeof multiplayer !== 'undefined' && multiplayer.active && !multiplayer.isGuest) {
+				multiplayer.phase = 'gameEnd';
+				await multiplayer.sync();
+			}
 			this.endGame();
-		else
+		} else {
+			if (typeof multiplayer !== 'undefined' && multiplayer.active && !multiplayer.isGuest) {
+				multiplayer.phase = 'roundEnd';
+				await multiplayer.sync();
+			}
 			this.startRound();
+		}
 	}
 	
 	// Sets up and displays the end-game screen
@@ -1481,7 +1577,57 @@ class Game {
 				effects.splice(i,1)
 		}
 	}
-	
+
+	// Returns plain-JSON game state from the guest's perspective.
+	// IMPORTANT: never pass Card objects directly — Card.elem is a DOM node and
+	// will crash JSON.stringify. Always extract plain fields only.
+	getSerializableState() {
+		const serCard = c => ({
+			name: c.name,
+			power: c.power,
+			basePower: c.basePower,
+			filename: c.filename,
+			faction: c.faction,
+			hero: c.hero,
+			row: c.row,
+			abilities: c.abilities.slice(),
+			isSpecial: c.isSpecial()
+		});
+
+		// board.row indices (host view):
+		//   0=op siege, 1=op ranged, 2=op close, 3=me close, 4=me ranged, 5=me siege
+		// guest = player_op, host = player_me
+		// Guest's DOM mirrors host's, so we swap the two halves:
+		//   guest field-op[0..2] → host rows [5,4,3] (siege,ranged,close)
+		//   guest field-me[0..2] → guest rows [2,1,0] (close,ranged,siege)
+		const rowOrder = [5, 4, 3, 2, 1, 0];
+		return {
+			board: {
+				rows: rowOrder.map(i => ({
+					cards: board.row[i].cards.map(serCard),
+					special: board.row[i].special ? serCard(board.row[i].special) : null,
+					score: board.row[i].total,
+					hasWeather: board.row[i].effects.weather
+				}))
+			},
+			weather: weather.cards.map(serCard),
+			myHand: player_op.hand.cards.map(serCard),
+			opponentHandCount: player_me.hand.cards.length,
+			myHealth: player_op.health,
+			opponentHealth: player_me.health,
+			myLeaderAvailable: player_op.leaderAvailable,
+			opponentLeaderAvailable: player_me.leaderAvailable,
+			myLeader: serCard(player_op.leader),
+			opponentLeader: serCard(player_me.leader),
+			currentTurn: this.currPlayer === player_op ? 'guest' : 'host',
+			myPassed: player_op.passed,
+			opponentPassed: player_me.passed,
+			myTotal: player_op.total,
+			opponentTotal: player_me.total,
+			phase: (typeof multiplayer !== 'undefined') ? multiplayer.phase : 'playing'
+		};
+	}
+
 }
 
 // Contians information and behavior of a Card
@@ -2380,7 +2526,9 @@ class DeckMaker {
 		this.stats = {};
 	}
 	
-	// Verifies current deck, creates the players and their decks, then starts a new game
+	// Verifies current deck, creates the players and their decks, then starts a new game.
+	// In multiplayer mode, this.onReady is set by lobby.js to intercept the deck
+	// and route it over the data channel instead of starting the game directly.
 	startNewGame(){
 		let warning = "";
 		if (this.stats.units < 22)
@@ -2389,24 +2537,30 @@ class DeckMaker {
 			warning += "Your deck must have no more than 10 special cards. \n";
 		if (warning != "")
 			return alert(warning);
-		
-		let me_deck = { 
+
+		let me_deck = {
 			faction: this.faction,
-			leader: card_dict[this.leader.index], 
+			leader: card_dict[this.leader.index],
 			cards: this.deck.filter(x => x.count > 0)
 		};
-		
+
+		// Multiplayer hook: if lobby.js set an onReady callback, use it instead
+		if (typeof this.onReady === 'function') {
+			this.onReady(me_deck);
+			return;
+		}
+
 		let op_deck = JSON.parse( premade_deck[randomInt(Object.keys(premade_deck).length)] );
 		op_deck.cards = op_deck.cards.map(c => ({index:c[0], count:c[1]}) );
 		//op_deck.leader = card_dict[op_deck.leader];
-		
+
 		let leaders = card_dict.filter(c => c.row === "leader" && c.deck === op_deck.faction);
 		op_deck.leader = leaders[randomInt(leaders.length)];
 		//op_deck.leader = card_dict.filter(c => c.row === "leader")[12];
-		
+
 		player_me = new Player(0, "Player 1", me_deck );
 		player_op = new Player(1, "Player 2", op_deck);
-		
+
 		this.elem.classList.add("hide");
 		game.startGame();
 	}
@@ -2678,4 +2832,5 @@ var game = new Game();
 var player_me, player_op;
 
 ui.enablePlayer(false);
-let dm = new DeckMaker();
+// Exposed as `deckMaker` so lobby.js can set the onReady callback for multiplayer
+var deckMaker = new DeckMaker();
