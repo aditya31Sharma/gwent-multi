@@ -146,20 +146,38 @@
 		document.querySelector('main').classList.remove('hide');
 		document.getElementById('deck-customization').classList.remove('hide');
 		multiplayer.isGuest = true;
+
+		// Replace the pass button's click handler (default calls player_me.passRound()
+		// which doesn't exist on the guest browser — replace with network message).
+		const passBtn = document.getElementById('pass-button');
+		const newPassBtn = passBtn.cloneNode(true);
+		passBtn.parentNode.replaceChild(newPassBtn, passBtn);
+		newPassBtn.addEventListener('click', () => {
+			if (!multiplayer.dataChannel || !multiplayer.dataChannel.open) return;
+			// During redraw phase: "Pass" = done redrawing → send 'ready'
+			// During playing phase: "Pass" = pass the round → send 'pass'
+			if (guestPrevState && guestPrevState.phase === 'redraw') {
+				multiplayer.dataChannel.send(JSON.stringify({ action: 'ready' }));
+			} else {
+				guestPass();
+			}
+		}, false);
 		// Override DeckMaker start button for guest
 		if (typeof deckMaker !== 'undefined') {
 			deckMaker.onReady = deck => {
 				document.getElementById('deck-customization').classList.add('hide');
-				multiplayer.dataChannel.send(JSON.stringify({ action: 'submitDeck', deck: serializeDeck(deck) }));
+				// deck is already me_deck format: {faction, leader: card_obj, cards: [{index,count}]}
+				// send it directly — serializeDeck() expects a DeckMaker instance, not a deck object
+				multiplayer.dataChannel.send(JSON.stringify({ action: 'submitDeck', deck }));
 				showGuestWaitingForRedraw();
 			};
 		}
 	}
 
 	function showGuestWaitingForRedraw() {
-		// Guest waits for host state sync which will trigger renderGuestView
-		// with phase='redraw', at which point the guest sees their initial hand
-		// and can send redrawCard messages
+		// Guest waits for host state sync (phase='redraw') which will render the board.
+		// Show the waiting overlay inside the lobby until the first state arrives.
+		document.getElementById('mp-lobby').classList.remove('hide');
 		document.getElementById('mp-waiting').classList.remove('hide');
 	}
 

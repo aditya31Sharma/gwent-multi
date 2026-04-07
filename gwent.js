@@ -491,7 +491,7 @@ class ControllerNetwork {
 			if (msg.action === 'redrawCard' && swaps < 2) {
 				const card = player_op.hand.cards.find(c => c.id() === msg.cardId);
 				if (card) {
-					await player_op.deck.swap(card, card.removeCard(-1));
+					player_op.deck.swap(player_op.hand, player_op.hand.removeCard(card));
 					swaps++;
 				}
 				await multiplayer.sync(); // update guest's hand after each swap

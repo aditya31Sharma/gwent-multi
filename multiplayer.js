@@ -21,22 +21,16 @@ const multiplayer = {
 
 	// Route an incoming guest action message to the right handler.
 	// Called from lobby.js's dataChannel.on('data') listener.
+	// NOTE: only 'submitDeck' is handled here. All other messages
+	// (redrawCard, ready, playCard, pass, useLeader) are consumed by
+	// ControllerNetwork via waitForMessage() during their respective phases.
+	// The permanent data listener fires alongside waitForMessage's once('data'),
+	// so handling them here would cause double-processing.
 	async handleGuestAction(msg) {
 		if (msg.action === 'submitDeck') {
 			this.guestDeck = msg.deck;
 			// If host deck already set, advance to redraw
 			if (this.hostDeck) await this.startRedraw();
-		}
-		else if (msg.action === 'redrawCard') {
-			const card = player_op.hand.cards.find(c => c.id() === msg.cardId);
-			if (card) {
-				const drawn = await player_op.deck.swap(card, card.removeCard(-1));
-			}
-			await this.sync();
-		}
-		else if (msg.action === 'ready') {
-			this.guestReady = true;
-			if (this.hostReady) await this.startGame();
 		}
 	},
 
@@ -207,7 +201,15 @@ function renderGuestHand(state) {
 	state.myHand.forEach(cardData => {
 		const cardElem = serCardToElem(cardData);
 		cardElem.classList.remove('noclick');
-		cardElem.addEventListener('click', () => guestSelectCard(cardData), false);
+		if (state.phase === 'redraw') {
+			// During redraw: clicking a card swaps it with the deck (not plays it)
+			cardElem.addEventListener('click', () => {
+				if (multiplayer.dataChannel && multiplayer.dataChannel.open)
+					multiplayer.dataChannel.send(JSON.stringify({ action: 'redrawCard', cardId: cardData.name }));
+			}, false);
+		} else {
+			cardElem.addEventListener('click', () => guestSelectCard(cardData), false);
+		}
 		handRow.appendChild(cardElem);
 	});
 	document.getElementById('hand-count-me').textContent = state.myHand.length;
@@ -241,6 +243,28 @@ function renderGuestStats(state) {
 	const isMyTurn = state.currentTurn === 'guest';
 	document.getElementById('pass-button').classList.toggle('noclick', !isMyTurn);
 	document.getElementById('hand-row').classList.toggle('card-selectable', isMyTurn);
+
+	// Leader card: render once on first state, then update availability
+	if (state.myLeader) {
+		const leaderBox = document.getElementById('leader-me');
+		const leaderContainer = leaderBox.children[0];
+		if (leaderContainer.children.length === 0) {
+			// First render: populate leader card element and wire click
+			leaderContainer.appendChild(serCardToElem(state.myLeader));
+			leaderBox.addEventListener('click', () => {
+				if (!leaderBox.classList.contains('noclick') && multiplayer.dataChannel && multiplayer.dataChannel.open)
+					guestUseLeader();
+			}, false);
+		}
+		// Toggle availability styling (mirrors Player.enableLeader / disableLeader)
+		if (state.myLeaderAvailable) {
+			leaderContainer.classList.remove('fade');
+			leaderBox.children[1].classList.remove('hide');
+		} else {
+			leaderContainer.classList.add('fade');
+			leaderBox.children[1].classList.add('hide');
+		}
+	}
 }
 
 function renderGuestWeather(state) {
@@ -252,7 +276,11 @@ function renderGuestWeather(state) {
 }
 
 function renderGuestPhase(state) {
-	if (state.phase === 'roundEnd' || state.phase === 'gameEnd') {
+	if (state.phase === 'redraw') {
+		// First state arrival: dismiss the lobby waiting overlay, reveal game board
+		document.getElementById('mp-lobby').classList.add('hide');
+		document.getElementById('mp-waiting').classList.add('hide');
+	} else if (state.phase === 'roundEnd' || state.phase === 'gameEnd') {
 		// Show end-of-round/game notification overlay
 		const bar = document.getElementById('notification-bar');
 		bar.children[0].textContent = state.phase === 'gameEnd' ? 'Game Over' : 'Round End';
