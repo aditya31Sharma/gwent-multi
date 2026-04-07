@@ -55,6 +55,7 @@
 		document.getElementById('mp-lobby').classList.remove('hide');
 		document.querySelector('main').classList.add('hide');
 		document.getElementById('toggle-music').classList.add('hide');
+		document.getElementById('deck-customization').classList.add('hide');
 
 		// Show lobby room immediately — code will fill in when peer opens
 		showScreen('mp-room');
@@ -73,6 +74,7 @@
 		document.getElementById('mp-lobby').classList.remove('hide');
 		document.querySelector('main').classList.add('hide');
 		document.getElementById('toggle-music').classList.add('hide');
+		document.getElementById('deck-customization').classList.add('hide');
 
 		showScreen('mp-connecting');
 		document.getElementById('mp-connect-code').textContent = roomCode.toUpperCase();
@@ -146,43 +148,55 @@
 				conn.on('close', () => showError('Opponent disconnected.'));
 			});
 		} else {
-			// Guest connects to host
-			const conn = peer.connect(code, { reliable: true });
-			conn.on('open', () => {
-				multiplayer.dataChannel = conn;
-				multiplayer.active = true;
-				multiplayer.isGuest = true;
+			// Guest: wait for own peer to register with signaling server,
+			// THEN connect to the host. Calling peer.connect() before peer
+			// is open hangs on mobile Safari.
+			peer.on('open', () => {
+				const conn = peer.connect(code, { reliable: true });
 
-				// Route incoming messages — lobbyState + startDeckSelect handled here;
-				// game states passed to renderGuestView
-				conn.on('data', data => {
-					const msg = JSON.parse(data);
-					if (msg.type === 'lobbyState') {
-						if (msg.hostReady) markReady('opp');
-					} else if (msg.type === 'startDeckSelect') {
-						showGuestDeckSelect();
-					} else {
-						renderGuestView(msg);
-					}
+				// Timeout if data channel doesn't open within 15s
+				const connTimeout = setTimeout(() => {
+					if (!multiplayer.active)
+						showError('Could not connect to room ' + code + '. Make sure the host is still waiting.');
+				}, 15000);
+
+				conn.on('open', () => {
+					clearTimeout(connTimeout);
+					multiplayer.dataChannel = conn;
+					multiplayer.active = true;
+					multiplayer.isGuest = true;
+
+					// Route incoming messages — lobbyState + startDeckSelect handled here;
+					// game states passed to renderGuestView
+					conn.on('data', data => {
+						const msg = JSON.parse(data);
+						if (msg.type === 'lobbyState') {
+							if (msg.hostReady) markReady('opp');
+						} else if (msg.type === 'startDeckSelect') {
+							showGuestDeckSelect();
+						} else {
+							renderGuestView(msg);
+						}
+					});
+
+					// Show lobby room for guest (no code section)
+					showScreen('mp-room');
+					document.getElementById('mp-slot-opp').classList.add('connected');
+					setRoomStatus('Connected! Press Ready when you\'re set.', false);
+
+					const readyBtn = document.getElementById('mp-ready-btn');
+					readyBtn.classList.remove('hide');
+					readyBtn.addEventListener('click', function onGuestReady() {
+						readyBtn.removeEventListener('click', onGuestReady);
+						readyBtn.disabled = true;
+						readyBtn.textContent = 'Waiting for opponent…';
+						markReady('you');
+						multiplayer.dataChannel.send(JSON.stringify({ action: 'lobbyReady' }));
+					}, false);
 				});
-
-				// Show lobby room for guest (no code section)
-				showScreen('mp-room');
-				document.getElementById('mp-slot-opp').classList.add('connected');
-				setRoomStatus('Connected! Press Ready when you\'re set.', false);
-
-				const readyBtn = document.getElementById('mp-ready-btn');
-				readyBtn.classList.remove('hide');
-				readyBtn.addEventListener('click', function onGuestReady() {
-					readyBtn.removeEventListener('click', onGuestReady);
-					readyBtn.disabled = true;
-					readyBtn.textContent = 'Waiting for opponent…';
-					markReady('you');
-					multiplayer.dataChannel.send(JSON.stringify({ action: 'lobbyReady' }));
-				}, false);
+				conn.on('error', e => showError('Connection error: ' + e.message));
+				conn.on('close', () => showError('Host disconnected. Please restart the game.'));
 			});
-			conn.on('error', e => showError('Connection error: ' + e.message));
-			conn.on('close', () => showError('Host disconnected. Please restart the game.'));
 		}
 	}
 
