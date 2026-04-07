@@ -21,60 +21,93 @@
 <!-- ── Multiplayer lobby overlay ─────────────────────────────────────── -->
 <div id="mp-lobby" class="hide">
 
-	<!-- Landing: Create Game / Join Game / Play Solo -->
+	<!-- Music toggle — always visible while lobby is open -->
+	<button id="mp-music-btn" class="mp-music-btn" title="Toggle music"
+		onclick="if(typeof ui!=='undefined'&&ui.youtube){ui.toggleMusic();this.classList.toggle('muted',ui.toggleMusic_elem.classList.contains('fade'))}">♫</button>
+
+	<!-- Landing: Create Room / Join Room / Solo -->
 	<div id="mp-landing" class="mp-screen">
-		<div class="mp-logo">GWENT</div>
-		<h2 class="mp-subtitle">Multiplayer</h2>
-		<button id="mp-btn-host" class="mp-btn mp-btn-primary">Create Game</button>
-		<button id="mp-btn-guest" class="mp-btn">Join Game</button>
-		<button id="mp-btn-solo" class="mp-btn mp-btn-ghost">Play Solo vs AI</button>
+		<div class="mp-logo-block">
+			<div class="mp-logo">GWENT</div>
+			<div class="mp-subtitle">Multiplayer</div>
+		</div>
+		<div class="mp-choices">
+			<button id="mp-btn-host" class="mp-choice-btn">
+				<div class="mp-choice-icon">⚔</div>
+				<div class="mp-choice-label">Create Room</div>
+				<div class="mp-choice-sub">Host a game · share your code</div>
+			</button>
+			<button id="mp-btn-guest" class="mp-choice-btn">
+				<div class="mp-choice-icon">⛨</div>
+				<div class="mp-choice-label">Join Room</div>
+				<div class="mp-choice-sub">Enter a friend's room code</div>
+			</button>
+		</div>
+		<button id="mp-btn-solo" class="mp-solo-link">Play Solo vs AI</button>
 	</div>
 
 	<!-- Join: enter room code -->
 	<div id="mp-join" class="mp-screen hide">
+		<button id="mp-join-back" class="mp-back-btn">‹ Back</button>
 		<h2 class="mp-screen-title">Join Game</h2>
 		<p class="mp-hint">Enter the 6-character room code</p>
 		<input id="mp-room-input" class="mp-code-input" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false" />
-		<button id="mp-join-btn" class="mp-btn mp-btn-primary">Join</button>
+		<button id="mp-join-btn" class="mp-btn mp-btn-primary">Join →</button>
 	</div>
 
-	<!-- Host: boot server + waiting for guest -->
-	<div id="mp-host" class="mp-screen hide">
-		<h2 class="mp-screen-title">Host Game</h2>
-		<div id="mp-host-booting">
-			<button id="mp-boot-btn" class="mp-btn mp-btn-primary">Boot Server</button>
-		</div>
-		<div id="mp-host-waiting" class="hide">
+	<!-- Connecting (guest only, brief) -->
+	<div id="mp-connecting" class="mp-screen hide">
+		<div class="mp-spinner"></div>
+		<p class="mp-hint">Joining room <strong id="mp-connect-code"></strong>…</p>
+	</div>
+
+	<!-- Lobby Room — both host and guest see this after connection -->
+	<div id="mp-room" class="mp-screen hide">
+		<h2 class="mp-screen-title">Lobby</h2>
+
+		<!-- Host: shows room code here; guest: this section stays hidden -->
+		<div id="mp-room-code-section" class="hide">
 			<p class="mp-hint">Share this code with your opponent:</p>
 			<div id="mp-room-code" class="mp-room-code">——————</div>
-			<p class="mp-hint mp-pulse">Waiting for opponent to join...</p>
 		</div>
+
+		<!-- Player vs Player slots -->
+		<div class="mp-player-row">
+			<div class="mp-player-slot" id="mp-slot-you">
+				<div class="mp-player-avatar">♟</div>
+				<div class="mp-player-name">You</div>
+				<div class="mp-ready-badge" id="mp-ready-you">·</div>
+			</div>
+			<div class="mp-versus">VS</div>
+			<div class="mp-player-slot mp-slot-waiting" id="mp-slot-opp">
+				<div class="mp-player-avatar">♟</div>
+				<div class="mp-player-name">Opponent</div>
+				<div class="mp-ready-badge" id="mp-ready-opp">·</div>
+			</div>
+		</div>
+
+		<p id="mp-room-status" class="mp-hint mp-pulse">Waiting…</p>
+		<button id="mp-ready-btn" class="mp-btn mp-btn-ready hide">Ready Up</button>
 	</div>
 
-	<!-- Guest: connecting spinner -->
-	<div id="mp-connecting" class="mp-screen hide">
-		<h2 class="mp-screen-title">Connecting</h2>
-		<p class="mp-hint">Joining room: <strong id="mp-connect-code"></strong></p>
-		<p class="mp-hint mp-pulse">Please wait...</p>
-	</div>
-
-	<!-- Waiting overlay (guest waiting for host / redraw phase) -->
+	<!-- Waiting overlay (post deck-select, guest waiting for redraw) -->
 	<div id="mp-waiting" class="mp-screen hide">
-		<p class="mp-hint mp-pulse">Waiting for opponent...</p>
+		<div class="mp-spinner"></div>
+		<p class="mp-hint mp-pulse">Waiting for opponent…</p>
 	</div>
 
 	<!-- Agile row picker -->
 	<div id="mp-row-picker" class="mp-screen hide">
 		<h2 class="mp-screen-title">Choose Row</h2>
-		<button class="mp-btn" onclick="guestPlayCard(window._agileCard,'close');document.getElementById('mp-row-picker').classList.add('hide');">Close Combat</button>
-		<button class="mp-btn" onclick="guestPlayCard(window._agileCard,'ranged');document.getElementById('mp-row-picker').classList.add('hide');">Ranged</button>
+		<button class="mp-btn mp-btn-primary" onclick="guestPickRow('close')">Close Combat</button>
+		<button class="mp-btn" onclick="guestPickRow('ranged')">Ranged</button>
 	</div>
 
 	<!-- Error display -->
 	<div id="mp-error" class="mp-screen hide">
 		<p class="mp-error-icon">⚠</p>
 		<p id="mp-error-msg" class="mp-hint"></p>
-		<button class="mp-btn" onclick="window.location.href=window.location.pathname">Back to Menu</button>
+		<button class="mp-btn" onclick="window.location.href=window.location.pathname">‹ Back to Menu</button>
 	</div>
 
 </div>

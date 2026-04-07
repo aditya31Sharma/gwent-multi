@@ -1318,9 +1318,10 @@ main { background-image: url('img/boardtest8.png'); }
 	background-repeat: no-repeat;
 }
 
-.visible { display: visible; }
-.hide {display: none; }
-.fade {opacity: 0.2; filter: alpha(opacity=20); }
+.visible { display: block; }
+/* !important ensures utility class always wins regardless of cascade order */
+.hide { display: none !important; }
+.fade { opacity: 0.2; filter: alpha(opacity=20); }
 
 .noclick {
 	pointer-events: none;
@@ -1333,139 +1334,344 @@ main { background-image: url('img/boardtest8.png'); }
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: radial-gradient(ellipse at center, #1a0f00 0%, #0a0600 100%);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, #1e1000 0%, #0a0600 60%, #000 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: inherit;
 }
 
+/* Music toggle — always visible while lobby is showing */
+.mp-music-btn {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  background: none;
+  border: 1px solid #4a3010;
+  color: #8a7040;
+  font-size: 1.1rem;
+  padding: 6px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  z-index: 10;
+  line-height: 1;
+}
+.mp-music-btn:hover { color: #c8a862; border-color: #c8a862; }
+.mp-music-btn.muted  { color: #4a3010; }
+
+/* ── Screens ── */
 .mp-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 340px;
-  padding: 24px 20px;
+  gap: 18px;
+  width: min(400px, calc(100vw - 40px));
+  padding: 32px 24px;
   text-align: center;
 }
 
+/* ── Landing ── */
+.mp-logo-block { margin-bottom: 4px; }
+
 .mp-logo {
-  font-size: 3rem;
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
   font-weight: bold;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.3em;
   color: #c8a862;
-  text-shadow: 0 0 20px rgba(200,168,98,0.5);
+  text-shadow: 0 0 30px rgba(200,168,98,0.45), 0 2px 0 #3a1800;
+  line-height: 1;
 }
 
 .mp-subtitle {
-  color: #9a7a42;
-  font-size: 1.1rem;
-  margin: -8px 0 8px;
-  letter-spacing: 0.1em;
+  color: #7a6030;
+  font-size: 0.78rem;
+  letter-spacing: 0.35em;
   text-transform: uppercase;
+  margin-top: 6px;
 }
+
+/* Two-card choice layout */
+.mp-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.mp-choice-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 12px 18px;
+  background: #140c04;
+  border: 1px solid #3a2810;
+  color: #c8a862;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s, border-color 0.2s, box-shadow 0.2s;
+  text-align: center;
+}
+
+.mp-choice-btn:hover {
+  background: #1e1008;
+  border-color: #c8a862;
+  box-shadow: 0 0 16px rgba(200,168,98,0.15);
+}
+
+.mp-choice-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.mp-choice-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.mp-choice-sub {
+  font-size: 0.72rem;
+  color: #6a5030;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+.mp-solo-link {
+  background: none;
+  border: none;
+  color: #5a4020;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+  text-decoration-color: #3a2810;
+  transition: color 0.15s;
+  margin-top: -4px;
+}
+.mp-solo-link:hover { color: #9a8050; }
+
+/* ── Join screen ── */
+.mp-back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #6a5030;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+  margin-bottom: -6px;
+}
+.mp-back-btn:hover { color: #c8a862; }
 
 .mp-screen-title {
   color: #c8a862;
-  font-size: 1.4rem;
-  letter-spacing: 0.1em;
-  margin-bottom: 4px;
-}
-
-.mp-hint {
-  color: #8a7050;
-  font-size: 0.9rem;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   margin: 0;
 }
 
+.mp-hint {
+  color: #7a6040;
+  font-size: 0.88rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Shared buttons ── */
 .mp-btn {
   width: 100%;
   padding: 14px 20px;
-  font-size: 1rem;
-  letter-spacing: 0.08em;
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  border: 1px solid #5a4020;
-  background: #1e1208;
-  color: #c8a862;
+  border: 1px solid #4a3010;
+  background: #160e04;
+  color: #b09050;
   cursor: pointer;
   border-radius: 2px;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.mp-btn:hover {
-  background: #2e1c10;
+.mp-btn:hover:not(:disabled) {
+  background: #2a1a08;
   border-color: #c8a862;
+  color: #c8a862;
+}
+
+.mp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mp-btn-primary {
-  background: #3a2010;
-  border-color: #c8a862;
-  color: #f0d090;
+  background: #2e1a08;
+  border-color: #a08040;
+  color: #e8c870;
 }
 
-.mp-btn-primary:hover {
-  background: #5a3018;
+.mp-btn-primary:hover:not(:disabled) {
+  background: #4a2a10;
+  border-color: #d8b860;
 }
 
-.mp-btn-ghost {
-  background: transparent;
-  border-color: #3a2a10;
-  color: #7a6040;
-  font-size: 0.85rem;
+/* Ready button — special gold glow */
+.mp-btn-ready {
+  background: #3a2008;
+  border: 1px solid #c8a030;
+  color: #f0d060;
+  font-size: 1rem;
+  letter-spacing: 0.18em;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
 }
 
-.mp-btn-ghost:hover {
-  border-color: #8a7050;
-  color: #a08050;
+.mp-btn-ready::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(200,160,48,0.05) 0%, transparent 60%);
 }
 
+.mp-btn-ready:hover:not(:disabled) {
+  background: #5a3010;
+  border-color: #f0d060;
+  box-shadow: 0 0 20px rgba(200,160,48,0.25);
+}
+
+/* ── Code input ── */
 .mp-code-input {
   width: 100%;
   padding: 14px;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   text-align: center;
-  letter-spacing: 0.4em;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em; /* compensate for letter-spacing on last char */
   text-transform: uppercase;
-  background: #0e0a04;
-  border: 1px solid #5a4020;
+  background: #0a0600;
+  border: 1px solid #4a3010;
+  border-bottom-color: #c8a862;
   color: #c8a862;
   border-radius: 2px;
   outline: none;
-  box-sizing: border-box;
+  font-family: inherit;
 }
 
-.mp-code-input:focus {
-  border-color: #c8a862;
-}
+.mp-code-input:focus { border-color: #c8a862; }
 
+/* ── Room code display ── */
 .mp-room-code {
-  font-size: 2.8rem;
-  font-weight: bold;
-  letter-spacing: 0.35em;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  letter-spacing: 0.4em;
   color: #f0d090;
-  background: #0e0a04;
-  border: 1px solid #c8a862;
+  background: #0a0600;
+  border: 1px solid #8a7040;
   border-radius: 2px;
-  padding: 12px 24px;
-  text-shadow: 0 0 10px rgba(240,208,144,0.4);
+  padding: 10px 20px;
+  text-shadow: 0 0 12px rgba(240,208,144,0.35);
   user-select: all;
+  font-weight: bold;
 }
 
-.mp-pulse {
-  animation: mp-pulse-anim 1.8s ease-in-out infinite;
+/* ── Lobby room ── */
+.mp-player-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  justify-content: center;
+  margin: 4px 0;
 }
+
+.mp-player-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #0e0900;
+  border: 1px solid #2a1c08;
+  border-radius: 3px;
+  padding: 16px 18px;
+  flex: 1;
+  max-width: 130px;
+  transition: border-color 0.3s;
+}
+
+.mp-player-slot.connected { border-color: #5a4020; }
+
+.mp-slot-waiting { opacity: 0.4; }
+.mp-slot-waiting.connected { opacity: 1; }
+
+.mp-player-avatar {
+  font-size: 1.6rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.mp-player-name {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a7040;
+}
+
+.mp-ready-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #4a3820;
+  padding: 3px 8px;
+  border: 1px solid #2a1c08;
+  border-radius: 1px;
+  min-width: 54px;
+  text-align: center;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.mp-ready-badge.is-ready {
+  color: #80c040;
+  border-color: #506020;
+  background: #102008;
+}
+
+.mp-versus {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: #4a3820;
+  flex-shrink: 0;
+}
+
+/* ── Spinner ── */
+.mp-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2a1c08;
+  border-top-color: #c8a862;
+  border-radius: 50%;
+  animation: mp-spin 0.9s linear infinite;
+}
+
+@keyframes mp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Pulse ── */
+.mp-pulse { animation: mp-pulse-anim 1.8s ease-in-out infinite; }
 
 @keyframes mp-pulse-anim {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 1;   }
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 1;    }
 }
 
-.mp-error-icon {
-  font-size: 2.5rem;
-  color: #c04020;
-}
+/* ── Error ── */
+.mp-error-icon { font-size: 2.2rem; color: #b03820; margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════
    RESPONSIVE LAYOUT — Mobile Portrait ↔ Desktop/Landscape

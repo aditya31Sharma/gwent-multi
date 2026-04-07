@@ -1,6 +1,6 @@
 "use strict";
 
-// lobby.js — PeerJS room creation/joining, URL routing, phase state machine
+// lobby.js — PeerJS room creation/joining, URL routing, lobby room + phase state machine
 // Runs in both HOST and GUEST browsers.
 
 (function initLobby() {
@@ -8,55 +8,79 @@
 	const role   = params.get('role');   // 'host' | 'guest' | null
 	const room   = params.get('room');   // 6-char code (guest only)
 
-	if (role === 'host')  initHost();
+	if (role === 'host')       initHost();
 	else if (role === 'guest') initGuest(room);
-	else showLandingPage();
+	else                       showLandingPage();
 
-	// ─── Landing page ─────────────────────────────────────────────────────────
+	// ─── Landing page ──────────────────────────────────────────────────────────
 	function showLandingPage() {
-		// Hide game UI, show lobby overlay
 		document.getElementById('mp-lobby').classList.remove('hide');
 		document.querySelector('main').classList.add('hide');
 		document.getElementById('toggle-music').classList.add('hide');
+		// mp-landing is visible by default (no hide class)
 
 		document.getElementById('mp-btn-host').addEventListener('click', () => {
 			window.location.href = '?role=host';
 		});
+
 		document.getElementById('mp-btn-guest').addEventListener('click', () => {
-			document.getElementById('mp-landing').classList.add('hide');
-			document.getElementById('mp-join').classList.remove('hide');
+			showScreen('mp-join');
 		});
+
+		document.getElementById('mp-join-back').addEventListener('click', () => {
+			showScreen('mp-landing');
+		});
+
 		document.getElementById('mp-btn-solo').addEventListener('click', () => {
 			document.getElementById('mp-lobby').classList.add('hide');
 			document.querySelector('main').classList.remove('hide');
 			document.getElementById('toggle-music').classList.remove('hide');
 		});
+
 		document.getElementById('mp-join-btn').addEventListener('click', () => {
 			const code = document.getElementById('mp-room-input').value.trim().toUpperCase();
 			if (code.length === 6) window.location.href = '?role=guest&room=' + code;
 			else alert('Enter a 6-character room code.');
 		});
+
+		// Allow Enter key in the code input
+		document.getElementById('mp-room-input').addEventListener('keydown', e => {
+			if (e.key === 'Enter') document.getElementById('mp-join-btn').click();
+		});
 	}
 
-	// ─── Host flow ────────────────────────────────────────────────────────────
+	// ─── Host flow ─────────────────────────────────────────────────────────────
+	// Auto-boots peer on page load. No "Boot Server" button needed.
 	function initHost() {
 		document.getElementById('mp-lobby').classList.remove('hide');
-		document.getElementById('mp-host').classList.remove('hide');
 		document.querySelector('main').classList.add('hide');
 		document.getElementById('toggle-music').classList.add('hide');
 
-		document.getElementById('mp-boot-btn').addEventListener('click', bootServer);
-	}
+		// Show lobby room immediately — code will fill in when peer opens
+		showScreen('mp-room');
+		document.getElementById('mp-room-code-section').classList.remove('hide');
+		document.getElementById('mp-room-status').textContent = 'Starting…';
+		document.getElementById('mp-room-status').classList.add('mp-pulse');
 
-	function bootServer() {
 		const code = generateRoomCode();
-		document.getElementById('mp-boot-btn').disabled = true;
-		document.getElementById('mp-boot-btn').textContent = 'Starting...';
 		startPeer(code, true);
 	}
 
+	// ─── Guest flow ────────────────────────────────────────────────────────────
+	function initGuest(roomCode) {
+		if (!roomCode) { showLandingPage(); return; }
+
+		document.getElementById('mp-lobby').classList.remove('hide');
+		document.querySelector('main').classList.add('hide');
+		document.getElementById('toggle-music').classList.add('hide');
+
+		showScreen('mp-connecting');
+		document.getElementById('mp-connect-code').textContent = roomCode.toUpperCase();
+		startPeer(roomCode.toUpperCase(), false);
+	}
+
+	// ─── PeerJS init ────────────────────────────────────────────────────────────
 	function startPeer(code, isHost) {
-		// PeerJS loaded via CDN script tag in index.html
 		const peer = new Peer(code, {
 			config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
 		});
@@ -64,8 +88,7 @@
 		peer.on('open', id => {
 			if (isHost) {
 				document.getElementById('mp-room-code').textContent = id.toUpperCase();
-				document.getElementById('mp-host-waiting').classList.remove('hide');
-				document.getElementById('mp-host-booting').classList.add('hide');
+				setRoomStatus('Share the code above with your opponent', true);
 			}
 		});
 
@@ -85,16 +108,41 @@
 					multiplayer.dataChannel = conn;
 					multiplayer.active = true;
 					multiplayer.isGuest = false;
-					// Listen for guest actions
+					multiplayer.hostLobbyReady = false;
+					multiplayer.guestLobbyReady = false;
+
+					// Route incoming guest messages
 					conn.on('data', data => {
 						const msg = JSON.parse(data);
 						multiplayer.handleGuestAction(msg);
 					});
-					// Advance to deck selection
-					showHostDeckSelect();
+
+					// Opponent slot becomes active
+					document.getElementById('mp-slot-opp').classList.add('connected');
+					setRoomStatus('Opponent joined! Press Ready when you\'re set.', false);
+
+					// Wire the Ready button for host
+					const readyBtn = document.getElementById('mp-ready-btn');
+					readyBtn.classList.remove('hide');
+					readyBtn.addEventListener('click', function onHostReady() {
+						readyBtn.removeEventListener('click', onHostReady);
+						readyBtn.disabled = true;
+						readyBtn.textContent = 'Waiting for opponent…';
+						multiplayer.hostLobbyReady = true;
+						markReady('you');
+						sendLobbyState();
+						if (multiplayer.guestLobbyReady) advanceToDeckSelect();
+					}, false);
+
+					// Called when guest sends { action: 'lobbyReady' }
+					multiplayer.onGuestLobbyReady = () => {
+						markReady('opp');
+						if (multiplayer.hostLobbyReady) advanceToDeckSelect();
+						else setRoomStatus('Opponent is ready! Press Ready when you\'re set.', false);
+					};
 				});
 				conn.on('error', e => showError('Connection lost: ' + e.message));
-				conn.on('close', () => showError('Guest disconnected.'));
+				conn.on('close', () => showError('Opponent disconnected.'));
 			});
 		} else {
 			// Guest connects to host
@@ -103,36 +151,73 @@
 				multiplayer.dataChannel = conn;
 				multiplayer.active = true;
 				multiplayer.isGuest = true;
-				// Listen for state updates from host
+
+				// Route incoming messages — lobbyState + startDeckSelect handled here;
+				// game states passed to renderGuestView
 				conn.on('data', data => {
-					const state = JSON.parse(data);
-					renderGuestView(state);
+					const msg = JSON.parse(data);
+					if (msg.type === 'lobbyState') {
+						if (msg.hostReady) markReady('opp');
+					} else if (msg.type === 'startDeckSelect') {
+						showGuestDeckSelect();
+					} else {
+						renderGuestView(msg);
+					}
 				});
-				showGuestDeckSelect();
+
+				// Show lobby room for guest (no code section)
+				showScreen('mp-room');
+				document.getElementById('mp-slot-opp').classList.add('connected');
+				setRoomStatus('Connected! Press Ready when you\'re set.', false);
+
+				const readyBtn = document.getElementById('mp-ready-btn');
+				readyBtn.classList.remove('hide');
+				readyBtn.addEventListener('click', function onGuestReady() {
+					readyBtn.removeEventListener('click', onGuestReady);
+					readyBtn.disabled = true;
+					readyBtn.textContent = 'Waiting for opponent…';
+					markReady('you');
+					multiplayer.dataChannel.send(JSON.stringify({ action: 'lobbyReady' }));
+				}, false);
 			});
 			conn.on('error', e => showError('Connection error: ' + e.message));
 			conn.on('close', () => showError('Host disconnected. Please restart the game.'));
 		}
 	}
 
-	// ─── Guest flow ──────────────────────────────────────────────────────────
-	function initGuest(roomCode) {
-		if (!roomCode) { showLandingPage(); return; }
-
-		document.getElementById('mp-lobby').classList.remove('hide');
-		document.getElementById('mp-connecting').classList.remove('hide');
-		document.querySelector('main').classList.add('hide');
-		document.getElementById('toggle-music').classList.add('hide');
-
-		document.getElementById('mp-connect-code').textContent = roomCode.toUpperCase();
-		startPeer(roomCode.toUpperCase(), false);
+	// ─── Lobby room helpers ─────────────────────────────────────────────────────
+	function setRoomStatus(text, pulse) {
+		const el = document.getElementById('mp-room-status');
+		el.textContent = text;
+		el.classList.toggle('mp-pulse', pulse);
 	}
 
-	// ─── Deck selection ───────────────────────────────────────────────────────
+	function markReady(who) {
+		// who: 'you' | 'opp'
+		const badge = document.getElementById('mp-ready-' + who);
+		if (badge) { badge.textContent = 'READY'; badge.classList.add('is-ready'); }
+	}
+
+	function sendLobbyState() {
+		if (!multiplayer.dataChannel || !multiplayer.dataChannel.open) return;
+		multiplayer.dataChannel.send(JSON.stringify({
+			type: 'lobbyState',
+			hostReady: multiplayer.hostLobbyReady,
+			guestReady: multiplayer.guestLobbyReady
+		}));
+	}
+
+	function advanceToDeckSelect() {
+		if (multiplayer.dataChannel && multiplayer.dataChannel.open) {
+			multiplayer.dataChannel.send(JSON.stringify({ type: 'startDeckSelect' }));
+		}
+		showHostDeckSelect();
+	}
+
+	// ─── Deck selection ─────────────────────────────────────────────────────────
 	function showHostDeckSelect() {
 		document.getElementById('mp-lobby').classList.add('hide');
 		document.getElementById('deck-customization').classList.remove('hide');
-		// Intercept the "Start game" button via DeckMaker's onReady callback
 		if (typeof deckMaker !== 'undefined') {
 			deckMaker.onReady = deck => {
 				document.getElementById('deck-customization').classList.add('hide');
@@ -147,27 +232,26 @@
 		document.getElementById('deck-customization').classList.remove('hide');
 		multiplayer.isGuest = true;
 
-		// Replace the pass button's click handler (default calls player_me.passRound()
-		// which doesn't exist on the guest browser — replace with network message).
+		// Replace the pass button's click handler — the default calls player_me.passRound()
+		// which doesn't exist on the guest browser.
 		const passBtn = document.getElementById('pass-button');
 		const newPassBtn = passBtn.cloneNode(true);
 		passBtn.parentNode.replaceChild(newPassBtn, passBtn);
 		newPassBtn.addEventListener('click', () => {
 			if (!multiplayer.dataChannel || !multiplayer.dataChannel.open) return;
-			// During redraw phase: "Pass" = done redrawing → send 'ready'
-			// During playing phase: "Pass" = pass the round → send 'pass'
+			// During redraw: 'Pass' = done redrawing → send 'ready'
+			// During playing: 'Pass' = pass the round → send 'pass'
 			if (guestPrevState && guestPrevState.phase === 'redraw') {
 				multiplayer.dataChannel.send(JSON.stringify({ action: 'ready' }));
 			} else {
 				guestPass();
 			}
 		}, false);
-		// Override DeckMaker start button for guest
+
 		if (typeof deckMaker !== 'undefined') {
 			deckMaker.onReady = deck => {
 				document.getElementById('deck-customization').classList.add('hide');
-				// deck is already me_deck format: {faction, leader: card_obj, cards: [{index,count}]}
-				// send it directly — serializeDeck() expects a DeckMaker instance, not a deck object
+				// deck is already me_deck format — send directly
 				multiplayer.dataChannel.send(JSON.stringify({ action: 'submitDeck', deck }));
 				showGuestWaitingForRedraw();
 			};
@@ -175,28 +259,25 @@
 	}
 
 	function showGuestWaitingForRedraw() {
-		// Guest waits for host state sync (phase='redraw') which will render the board.
-		// Show the waiting overlay inside the lobby until the first state arrives.
+		// Show the waiting overlay; renderGuestPhase will hide it when phase='redraw' arrives
 		document.getElementById('mp-lobby').classList.remove('hide');
-		document.getElementById('mp-waiting').classList.remove('hide');
+		showScreen('mp-waiting');
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// ─── Helpers ────────────────────────────────────────────────────────────────
+	// Hide all mp-screens and show only the named one
+	function showScreen(id) {
+		document.querySelectorAll('#mp-lobby .mp-screen').forEach(el => el.classList.add('hide'));
+		document.getElementById(id).classList.remove('hide');
+	}
+
 	function generateRoomCode() {
-		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1
+		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, O, 0, 1
 		return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-	}
-
-	function serializeDeck(deckMakerInstance) {
-		return {
-			faction: deckMakerInstance.faction,
-			leader: card_dict[deckMakerInstance.leader.index],
-			cards: deckMakerInstance.deck.filter(x => x.count > 0)
-		};
 	}
 
 	function showError(msg) {
 		document.getElementById('mp-error-msg').textContent = msg;
-		document.getElementById('mp-error').classList.remove('hide');
+		showScreen('mp-error');
 	}
 })();

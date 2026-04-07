@@ -9,6 +9,9 @@ const multiplayer = {
 	dataChannel: null,     // PeerJS DataConnection — set by lobby.js on open
 	phase: 'lobby',        // lobby | deckSelect | redraw | playing | roundEnd | gameEnd
 	prevState: null,       // last state sent, used for fly-in animation diff
+	hostLobbyReady: false, // true when host clicked Ready in lobby room
+	guestLobbyReady: false,// true when guest clicked Ready in lobby room
+	onGuestLobbyReady: null, // callback set by lobby.js — fires when guest sends lobbyReady
 
 	// Send current game state to guest. Called from Game.endTurn() and during
 	// deck-select / redraw phases (which never call endTurn).
@@ -21,16 +24,17 @@ const multiplayer = {
 
 	// Route an incoming guest action message to the right handler.
 	// Called from lobby.js's dataChannel.on('data') listener.
-	// NOTE: only 'submitDeck' is handled here. All other messages
-	// (redrawCard, ready, playCard, pass, useLeader) are consumed by
-	// ControllerNetwork via waitForMessage() during their respective phases.
-	// The permanent data listener fires alongside waitForMessage's once('data'),
-	// so handling them here would cause double-processing.
+	// NOTE: only 'submitDeck' is handled here for game flow. lobbyReady is handled
+	// for the pre-game lobby. All other game messages (redrawCard, ready, playCard,
+	// pass, useLeader) are consumed by ControllerNetwork via waitForMessage().
 	async handleGuestAction(msg) {
 		if (msg.action === 'submitDeck') {
 			this.guestDeck = msg.deck;
 			// If host deck already set, advance to redraw
 			if (this.hostDeck) await this.startRedraw();
+		} else if (msg.action === 'lobbyReady') {
+			this.guestLobbyReady = true;
+			if (typeof this.onGuestLobbyReady === 'function') this.onGuestLobbyReady();
 		}
 	},
 
@@ -329,4 +333,10 @@ function guestPass() {
 function guestUseLeader() {
 	if (!multiplayer.dataChannel || !multiplayer.dataChannel.open) return;
 	multiplayer.dataChannel.send(JSON.stringify({ action: 'useLeader' }));
+}
+
+// Called by row-picker overlay buttons for agile cards
+function guestPickRow(row) {
+	document.getElementById('mp-row-picker').classList.add('hide');
+	if (guestSelectedCard) guestPlayCard(guestSelectedCard, row);
 }
