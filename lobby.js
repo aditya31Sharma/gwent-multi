@@ -85,7 +85,13 @@
 	function startPeer(code, isHost) {
 		// Host registers with room code as its peer ID.
 		// Guest gets a random ID — it connects TO the host's code, not AS the code.
-		const iceConfig = { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } };
+		const iceConfig = {
+			config: { iceServers: [
+				{ urls: 'stun:stun.l.google.com:19302' },
+				{ urls: 'stun:stun1.l.google.com:19302' },
+				{ urls: 'stun:stun2.l.google.com:19302' }
+			]}
+		};
 		const peer = isHost ? new Peer(code, iceConfig) : new Peer(iceConfig);
 
 		peer.on('open', id => {

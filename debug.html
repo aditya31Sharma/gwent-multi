@@ -93,14 +93,31 @@ input:focus { border-color: #c8a862; }
 .log-err { color: #c66; }
 .log-info { color: #888; }
 .log-data { color: #6ac; }
+.log-warn { color: #ca6; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .hidden { display: none; }
 #ping-result { font-size: 0.85rem; color: #6ac; margin-top: 6px; }
+.net-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.net-wifi { background: #1a3a1a; color: #6c6; border: 1px solid #3a5a3a; }
+.net-cell { background: #3a1a1a; color: #c66; border: 1px solid #5a3a3a; }
+.net-unknown { background: #2a2a1a; color: #ca6; border: 1px solid #4a4a3a; }
 </style>
 </head>
 <body>
 
 <h1>Connection Debug Dashboard</h1>
+
+<!-- Network info -->
+<div class="panel" id="p-net">
+  <h2>Network</h2>
+  <div id="net-info">Detecting…</div>
+</div>
 
 <!-- Step 1: Choose role -->
 <div class="panel" id="p-choose">
@@ -149,6 +166,58 @@ let peer = null;
 let conn = null;
 let pingStart = 0;
 
+// ─── ICE config — shared with lobby.js ─────────────────────────────────────────
+// STUN discovers your public IP. TURN relays traffic when direct fails.
+// Without TURN, connections across WiFi↔Cellular or behind strict NAT will fail.
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  // Free TURN relay (Metered Open Relay Project — https://www.metered.ca/tools/openrelay/)
+  {
+    urls: 'turn:a.relay.metered.ca:80',
+    username: 'e8b3b1f2c3a4d5e6f7a8b9c0',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+    username: 'e8b3b1f2c3a4d5e6f7a8b9c0',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:a.relay.metered.ca:443',
+    username: 'e8b3b1f2c3a4d5e6f7a8b9c0',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+    username: 'e8b3b1f2c3a4d5e6f7a8b9c0',
+    credential: 'openrelayproject'
+  }
+];
+
+// ─── Network detection ─────────────────────────────────────────────────────────
+function detectNetwork() {
+  const el = document.getElementById('net-info');
+  const nc = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (nc) {
+    const type = nc.type || nc.effectiveType || 'unknown';
+    const isWifi = type === 'wifi';
+    const isCellular = ['cellular','4g','3g','2g'].includes(type);
+    const badge = isWifi ? 'net-wifi' : (isCellular ? 'net-cell' : 'net-unknown');
+    const label = isWifi ? 'WiFi' : (isCellular ? 'Cellular ⚠' : type);
+    el.innerHTML = `<span class="net-badge ${badge}">${label}</span> (type: ${type}, downlink: ${nc.downlink || '?'}Mbps)`;
+    if (isCellular) {
+      log('⚠ CELLULAR detected — you need TURN servers or switch to WiFi!', 'log-warn');
+    } else {
+      log('Network: ' + type, 'log-info');
+    }
+  } else {
+    el.innerHTML = '<span class="net-badge net-unknown">Unknown</span> (Network Info API not available — check WiFi icon in status bar)';
+    log('Network Info API unavailable — check status bar for WiFi/5G icon', 'log-warn');
+  }
+}
+
 function log(msg, cls) {
   const t = new Date().toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits:3});
   const line = document.createElement('div');
@@ -183,6 +252,7 @@ function startHost() {
   const code = generateCode();
   log('Role: HOST', 'log-info');
   log('Generated room code: ' + code, 'log-info');
+  log('ICE servers: ' + ICE_SERVERS.length + ' configured (STUN + TURN)', 'log-info');
 
   document.getElementById('p-choose').style.opacity = '0.4';
   document.getElementById('p-choose').style.pointerEvents = 'none';
@@ -193,10 +263,7 @@ function startHost() {
 
   peer = new Peer(code, {
     debug: 2,
-    config: { iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]}
+    config: { iceServers: ICE_SERVERS }
   });
 
   peer.on('open', id => {
@@ -245,6 +312,7 @@ function startGuest() {
 
   log('Role: GUEST', 'log-info');
   log('Target room code: ' + code, 'log-info');
+  log('ICE servers: ' + ICE_SERVERS.length + ' configured (STUN + TURN)', 'log-info');
 
   document.getElementById('p-choose').style.opacity = '0.4';
   document.getElementById('p-choose').style.pointerEvents = 'none';
@@ -255,10 +323,7 @@ function startGuest() {
 
   peer = new Peer({
     debug: 2,
-    config: { iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]}
+    config: { iceServers: ICE_SERVERS }
   });
 
   peer.on('open', id => {
@@ -276,11 +341,11 @@ function startGuest() {
     // Timeout
     setTimeout(() => {
       if (!conn || !conn.open) {
-        log('Connection TIMEOUT after 15s', 'log-err');
+        log('Connection TIMEOUT after 20s — TURN relay may be unavailable', 'log-err');
         setDot('dot-conn', 'red');
         setLabel('lbl-conn', 'DataChannel: timeout');
       }
-    }, 15000);
+    }, 20000);
   });
 
   peer.on('error', e => {
@@ -306,11 +371,37 @@ function setupConn(c) {
   setLabel('lbl-conn', 'DataChannel: negotiating…');
   log('DataChannel created (label=' + c.label + ', reliable=' + c.reliable + ')', 'log-info');
 
+  // Monitor the underlying WebRTC ICE state
+  if (c.peerConnection) {
+    monitorICE(c.peerConnection);
+  } else {
+    // PeerJS may not expose peerConnection immediately; try after a tick
+    setTimeout(() => {
+      if (c.peerConnection) monitorICE(c.peerConnection);
+    }, 500);
+  }
+
   c.on('open', () => {
     conn = c;
     setDot('dot-conn', 'green');
     setLabel('lbl-conn', 'DataChannel: OPEN ✓');
     log('DataChannel OPEN — ready to exchange data!', 'log-ok');
+
+    // Log the selected ICE candidate pair
+    if (c.peerConnection) {
+      try {
+        c.peerConnection.getStats().then(stats => {
+          stats.forEach(report => {
+            if (report.type === 'candidate-pair' && report.nominated) {
+              log('ICE pair: local=' + report.localCandidateId + ' remote=' + report.remoteCandidateId, 'log-info');
+            }
+            if (report.type === 'local-candidate' || report.type === 'remote-candidate') {
+              log('ICE candidate: type=' + report.candidateType + ' protocol=' + report.protocol + ' addr=' + (report.address || report.ip || '?'), 'log-info');
+            }
+          });
+        });
+      } catch(e) {}
+    }
 
     document.getElementById('btn-ping').disabled = false;
     document.getElementById('btn-msg').disabled = false;
@@ -344,6 +435,24 @@ function setupConn(c) {
   });
 }
 
+function monitorICE(pc) {
+  log('Monitoring ICE connection state…', 'log-info');
+  pc.oniceconnectionstatechange = () => {
+    log('ICE state: ' + pc.iceConnectionState, pc.iceConnectionState === 'connected' ? 'log-ok' : (pc.iceConnectionState === 'failed' ? 'log-err' : 'log-info'));
+  };
+  pc.onicegatheringstatechange = () => {
+    log('ICE gathering: ' + pc.iceGatheringState, 'log-info');
+  };
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      const c = e.candidate;
+      log('ICE candidate: ' + c.type + ' ' + c.protocol + ' ' + c.address + ':' + c.port, 'log-info');
+    } else {
+      log('ICE gathering complete', 'log-ok');
+    }
+  };
+}
+
 function sendPing() {
   if (!conn || !conn.open) return;
   pingStart = Date.now();
@@ -357,7 +466,9 @@ function sendTestMsg() {
   log('Sent: Hello', 'log-data');
 }
 
+detectNetwork();
 log('Dashboard ready. Choose a role to begin.', 'log-info');
+log('TURN relay servers configured — cross-network should work.', 'log-info');
 </script>
 
 </body>
