@@ -42,7 +42,8 @@ const multiplayer = {
 	async handleHostDeck(deck) {
 		this.hostDeck = deck;
 		this.phase = 'deckSelect';
-		await this.sync();
+		// Do NOT call sync() here — player_me/player_op don't exist yet
+		// (DeckMaker.startNewGame returns early via onReady without creating players)
 		if (this.guestDeck) await this.startRedraw();
 	},
 
@@ -55,7 +56,10 @@ const multiplayer = {
 		player_op = new Player(1, 'Player 2', opDeck);
 		// Replace AI controller with network controller
 		player_op.controller = new ControllerNetwork(player_op);
-		await this.sync();
+		// Show the game board for the host (was hidden during lobby/deck phases)
+		document.querySelector('main').classList.remove('hide');
+		// Do NOT call sync() here — game.startGame() will draw cards first,
+		// then ControllerNetwork.redraw() sends the first valid sync to guest
 		game.startGame();
 	},
 
