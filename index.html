@@ -9,7 +9,7 @@
 	<meta name="description" content="Play the original Gwent minigame from The Witcher 3 in your browser! Includes cards from Hearts of Stone and Blood & Wine!" />
 	<meta name="keywords" content="arun, sundaram, programmer, gwent, tw3, witcher, card, game, gamedev, play" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link rel="stylesheet" type="text/css" href="style.css" />
+	<link rel="stylesheet" type="text/css" href="style.css?v=1775652849" />
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -388,11 +388,11 @@
 <script type="text/javascript" src="abilities.js"></script>
 <script type="text/javascript" src="factions.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
-<script type="text/javascript" src="gwent.js"></script>
+<script type="text/javascript" src="gwent.js?v=1775652849"></script>
 <!-- PeerJS for WebRTC P2P (loaded after gwent.js so globals are available) -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script type="text/javascript" src="multiplayer.js"></script>
-<script type="text/javascript" src="lobby.js"></script>
+<script type="text/javascript" src="multiplayer.js?v=1775652849"></script>
+<script type="text/javascript" src="lobby.js?v=1775652849"></script>
 <script>
 // Touch swipe for carousel (redraw phase)
 (function() {
@@ -406,39 +406,56 @@
 	}, { passive: true });
 })();
 
-// Deck builder mobile tabs
+// Deck builder mobile tabs — robust version
 (function() {
 	var tabs = document.getElementById('deck-tabs');
 	if (!tabs) return;
+	var activeTarget = 'card-bank';
+
 	function isMobile() { return window.innerWidth <= 768; }
-	function applyTab(show) {
-		if (!isMobile()) return; // desktop: both visible always
-		document.getElementById('card-bank').style.display = (show === 'card-bank') ? '' : 'none';
-		document.getElementById('card-deck').style.display = (show === 'card-deck') ? '' : 'none';
-		document.getElementById('card-bank-title').style.display = (show === 'card-bank') ? '' : 'none';
-		document.getElementById('card-deck-title').style.display = (show === 'card-deck') ? '' : 'none';
+
+	function applyTab() {
+		var bank = document.getElementById('card-bank');
+		var deck = document.getElementById('card-deck');
+		var bankT = document.getElementById('card-bank-title');
+		var deckT = document.getElementById('card-deck-title');
+		if (!bank || !deck) return;
+
+		if (isMobile()) {
+			bank.style.display = (activeTarget === 'card-bank') ? '' : 'none';
+			deck.style.display = (activeTarget === 'card-deck') ? '' : 'none';
+			if (bankT) bankT.style.display = 'none';
+			if (deckT) deckT.style.display = 'none';
+		} else {
+			bank.style.display = '';
+			deck.style.display = '';
+			if (bankT) bankT.style.display = '';
+			if (deckT) deckT.style.display = '';
+		}
 	}
+
 	tabs.addEventListener('click', function(e) {
 		var btn = e.target.closest('.deck-tab');
 		if (!btn) return;
 		tabs.querySelectorAll('.deck-tab').forEach(function(b) { b.classList.remove('active'); });
 		btn.classList.add('active');
-		applyTab(btn.dataset.target);
+		activeTarget = btn.dataset.target;
+		applyTab();
 	});
-	// On initial load and resize: apply default tab state
-	applyTab('card-bank');
-	window.addEventListener('resize', function() {
-		if (!isMobile()) {
-			// Desktop: show both
-			document.getElementById('card-bank').style.display = '';
-			document.getElementById('card-deck').style.display = '';
-			document.getElementById('card-bank-title').style.display = '';
-			document.getElementById('card-deck-title').style.display = '';
-		} else {
-			var active = tabs.querySelector('.deck-tab.active');
-			applyTab(active ? active.dataset.target : 'card-bank');
-		}
-	});
+
+	// Apply on load
+	applyTab();
+
+	// Re-apply on resize (desktop ↔ mobile switch)
+	window.addEventListener('resize', applyTab);
+
+	// Re-apply when DeckMaker rebuilds the DOM (faction change, etc.)
+	// The DeckMaker's clear() empties card-bank/card-deck then makeBank() repopulates.
+	// The containers themselves survive, only children change, so style.display persists.
+	// But just in case, observe the deck-customization container:
+	var obs = new MutationObserver(function() { applyTab(); });
+	var deckCustom = document.getElementById('deck-customization');
+	if (deckCustom) obs.observe(deckCustom, { childList: true, subtree: true });
 })();
 </script>
 </body>

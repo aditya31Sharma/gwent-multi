@@ -260,9 +260,12 @@
 		passBtn.parentNode.replaceChild(newPassBtn, passBtn);
 		newPassBtn.addEventListener('click', () => {
 			if (!multiplayer.dataChannel || !multiplayer.dataChannel.open) return;
-			// During redraw: 'Pass' = done redrawing → send 'ready'
+			// During redraw: 'Done' = done redrawing → send 'ready'
 			// During playing: 'Pass' = pass the round → send 'pass'
-			if (guestPrevState && guestPrevState.phase === 'redraw') {
+			// Check BOTH current and previous state — guestPrevState is null on first render
+			const isRedraw = (guestPrevState && guestPrevState.phase === 'redraw') ||
+			                 newPassBtn.textContent === 'Done';
+			if (isRedraw) {
 				multiplayer.dataChannel.send(JSON.stringify({ action: 'ready' }));
 			} else {
 				guestPass();
