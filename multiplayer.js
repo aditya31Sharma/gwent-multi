@@ -248,9 +248,12 @@ function renderGuestStats(state) {
 	document.getElementById('stats-op').classList.toggle('current-turn', state.currentTurn === 'host');
 
 	// Enable/disable pass button and hand cards
+	// During redraw phase, ALWAYS enable (both players redraw simultaneously)
 	const isMyTurn = state.currentTurn === 'guest';
-	document.getElementById('pass-button').classList.toggle('noclick', !isMyTurn);
-	document.getElementById('hand-row').classList.toggle('card-selectable', isMyTurn);
+	const isRedraw = state.phase === 'redraw';
+	document.getElementById('pass-button').classList.toggle('noclick', !isMyTurn && !isRedraw);
+	document.getElementById('pass-button').textContent = isRedraw ? 'Done' : 'Pass';
+	document.getElementById('hand-row').classList.toggle('card-selectable', isMyTurn || isRedraw);
 
 	// Leader card: render once on first state, then update availability
 	if (state.myLeader) {
@@ -284,16 +287,21 @@ function renderGuestWeather(state) {
 }
 
 function renderGuestPhase(state) {
+	const banner = document.getElementById('redraw-banner');
 	if (state.phase === 'redraw') {
 		// First state arrival: dismiss the lobby waiting overlay, reveal game board
 		document.getElementById('mp-lobby').classList.add('hide');
 		document.getElementById('mp-waiting').classList.add('hide');
-	} else if (state.phase === 'roundEnd' || state.phase === 'gameEnd') {
-		// Show end-of-round/game notification overlay
-		const bar = document.getElementById('notification-bar');
-		bar.children[0].textContent = state.phase === 'gameEnd' ? 'Game Over' : 'Round End';
-		bar.classList.remove('hide');
-		setTimeout(() => bar.classList.add('hide'), 2000);
+		if (banner) banner.classList.remove('hide');
+	} else {
+		if (banner) banner.classList.add('hide');
+		if (state.phase === 'roundEnd' || state.phase === 'gameEnd') {
+			// Show end-of-round/game notification overlay
+			const bar = document.getElementById('notification-bar');
+			bar.children[0].textContent = state.phase === 'gameEnd' ? 'Game Over' : 'Round End';
+			bar.classList.remove('hide');
+			setTimeout(() => bar.classList.add('hide'), 2000);
+		}
 	}
 }
 

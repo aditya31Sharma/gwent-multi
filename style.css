@@ -1153,8 +1153,56 @@ main {
 #toggle-music:hover { color: var(--gold); }
 .music-customization { transform: translateX(200vw); }
 
+/* ── 17. Redraw Banner (Guest) ──────────────────────────────────────────── */
+#redraw-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 12px 16px;
+  z-index: 50;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: center;
+  color: var(--gold-bright);
+  background: rgba(8,6,4,0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--gold-dim);
+}
+
+/* ── 18. Carousel Done Button ──────────────────────────────────────────── */
+#carousel-done {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 91;
+  padding: 14px 36px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  background: var(--surface-2);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#carousel-done:hover {
+  background: var(--surface-3);
+  box-shadow: 0 0 16px var(--gold-glow);
+}
+
+/* ── 19. Deck Builder Tabs (Mobile) ────────────────────────────────────── */
+#deck-tabs {
+  display: none; /* Hidden on desktop — both arrays visible side by side */
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   MULTIPLAYER LOBBY — kept from previous version
+   MULTIPLAYER LOBBY
    ═══════════════════════════════════════════════════════════════════════════ */
 
 #mp-lobby {
@@ -1269,10 +1317,10 @@ main {
 
 @media (max-width: 768px) {
   :root {
-    --card-h: 52px;
-    --card-w: 36px;
-    --card-r: 2px;
-    --hand-h: 72px;
+    --card-h: 64px;
+    --card-w: 44px;
+    --card-r: 3px;
+    --hand-h: 96px;
     --row-h: auto;
   }
 
@@ -1285,7 +1333,7 @@ main {
       "hand";
   }
 
-  /* Stats collapse to horizontal bar */
+  /* Stats: compact horizontal bar */
   #panel-left {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1297,66 +1345,177 @@ main {
     background: var(--bg);
   }
 
-  .leader-box { width: 36px; height: 28px; border-radius: 3px; }
+  .leader-box { width: 38px; height: 30px; border-radius: 3px; }
   .stats {
-    flex: 1; min-width: 100px;
-    padding: 4px 8px;
+    flex: 1; min-width: 110px;
+    padding: 5px 8px;
     border-radius: 4px;
   }
-  .profile-img { width: 22px; height: 22px; margin-right: 6px; }
-  .profile-img > div > div { width: 10px; height: 10px; }
-  .score-total { width: 22px; height: 22px; font-size: 11px; top: 4px; right: 4px; }
+  .profile-img { width: 24px; height: 24px; margin-right: 6px; }
+  .profile-img > div > div { width: 12px; height: 12px; }
+  .score-total { width: 26px; height: 26px; font-size: 12px; top: 4px; right: 6px; }
   .name { font-size: 10px; }
   .deck-name { font-size: 8px; }
-  .hand-count { font-size: 9px; background-size: 10px; padding-left: 14px; }
-  .gem { width: 10px; height: 10px; }
-  #weather { min-height: 24px; flex: 0 0 auto; padding: 2px; border-radius: 4px; }
+  .hand-count { font-size: 9px; background-size: 11px; padding-left: 15px; }
+  .gem { width: 11px; height: 11px; }
+  #weather { min-height: 26px; flex: 0 0 auto; padding: 2px; border-radius: 4px; }
   #pass-button {
-    width: auto; padding: 6px 16px; font-size: 10px;
-    border-radius: 4px;
+    width: auto;
+    padding: 8px 18px;
+    font-size: 11px;
+    min-height: 36px;
+    border-radius: 5px;
   }
   #passed-me.passed, #passed-op.passed { font-size: 8px; }
 
-  /* Board scrollable */
+  /* Board: scrollable, taller rows */
   #panel-mid {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .field-row { min-height: 48px; }
-  .field-row::before { font-size: 7px; left: 26px; }
-  .row-score { width: 24px; font-size: 12px; }
-  .row-special { width: 32px; }
-  .row-cards { padding: 1px 2px; gap: 1px; }
+  .field-row {
+    min-height: 80px;  /* ~90px from Figma, 80px min for flexibility */
+  }
+  .field-row::before { font-size: 9px; left: 30px; top: 2px; }
+  .row-score { width: 28px; font-size: 13px; }
+  .row-special { width: 38px; }
+  .row-cards {
+    padding: 3px 4px;
+    gap: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
 
-  /* Hand */
+  /* Hand: bigger cards, smooth scroll */
   #field-hand { padding: 4px 6px; }
-  #hand-row { height: calc(var(--hand-h) - 8px); gap: 3px; }
+  #hand-row {
+    height: calc(var(--hand-h) - 8px);
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  #hand-row > .card {
+    scroll-snap-align: start;
+  }
 
   .card-selectable > .card:hover {
-    transform: translateY(-4px) scale(1.03);
+    transform: translateY(-6px) scale(1.04);
   }
 
   /* Hide right panel on mobile */
   #panel-right { display: none; }
 
-  /* Preview hidden on mobile — too much screen space */
+  /* Preview hidden on mobile */
   .card-preview { display: none !important; }
 
-  /* Carousel mobile */
-  #carousel > div:first-child { gap: 8px; padding: 12px; flex-wrap: nowrap; }
-  #carousel > div:first-child > .card-lg:nth-child(3) { width: 100px; height: 187px; }
+  /* Carousel: larger center card */
+  #carousel > div:first-child {
+    gap: 8px; padding: 16px; flex-wrap: nowrap;
+  }
+  #carousel > div:first-child > .card-lg:nth-child(3) {
+    width: 110px; height: 206px;
+  }
   #carousel > div:first-child > .card-lg:nth-child(2),
-  #carousel > div:first-child > .card-lg:nth-child(4) { width: 72px; height: 135px; }
+  #carousel > div:first-child > .card-lg:nth-child(4) {
+    width: 76px; height: 142px;
+  }
   #carousel > div:first-child > .card-lg:nth-child(1),
-  #carousel > div:first-child > .card-lg:nth-child(5) { width: 48px; height: 90px; opacity: 0.3; }
-  #carousel .card-description { width: min(260px, 80vw); }
-  #carousel > div:nth-child(3) { font-size: 11px; padding: 10px 12px; }
+  #carousel > div:first-child > .card-lg:nth-child(5) {
+    width: 50px; height: 94px; opacity: 0.3;
+  }
+  #carousel .card-description { width: min(280px, 85vw); }
+  #carousel > div:nth-child(3) { font-size: 12px; padding: 12px 14px; }
+  #carousel-done { bottom: 20px; padding: 12px 28px; font-size: 13px; }
 
-  /* Deck customization */
-  #deck-customization { padding: 12px 8px; }
-  .card-array { max-height: 42vh; padding: 6px; gap: 6px; }
-  .card-array .card-lg { width: 60px; height: 112px; border-radius: 4px; }
-  #start-game { padding: 12px 32px; font-size: 12px; }
+  /* ── Deck customization: mobile flow layout ── */
+  #deck-customization {
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Override desktop absolute positioning */
+  #deck-customization #faction-title,
+  #deck-customization #faction-description,
+  #deck-customization .deck-options,
+  #deck-customization .card-contianer-title,
+  #deck-customization .card-array,
+  #deck-customization #card-leader,
+  #deck-customization #deck-stats,
+  #deck-customization #start-game,
+  #deck-customization #upload-deck,
+  #deck-customization #change-faction,
+  #deck-customization #download-deck {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Deck tabs visible on mobile */
+  #deck-tabs {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .deck-tab {
+    flex: 1;
+    padding: 12px 8px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--surface-2);
+    color: var(--text-3);
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .deck-tab.active {
+    background: var(--surface-3);
+    color: var(--gold);
+  }
+
+  /* Card arrays: bigger cards, more space */
+  .card-array {
+    max-height: 55vh;
+    padding: 8px;
+    gap: 8px;
+    border-radius: 8px;
+    width: 100% !important;
+  }
+  .card-array .card-lg {
+    width: 70px;
+    height: 131px;
+    border-radius: 5px;
+  }
+
+  /* Hide desktop-only titles when tabs are visible */
+  #card-bank-title, #card-deck-title {
+    display: none !important;
+  }
+
+  #card-leader {
+    width: 100% !important;
+  }
+  #deck-stats {
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+  #start-game {
+    padding: 14px 32px;
+    font-size: 13px;
+    width: auto !important;
+  }
 }
 
 /* Large desktop */

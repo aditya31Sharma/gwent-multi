@@ -451,6 +451,12 @@ class ControllerNetwork {
 	// player.endTurn() → game.endTurn() internally, so we must NOT call
 	// multiplayer.sync() here — Game.endTurn() is the single sync point.
 	async startTurn(player) {
+		// Sync state to guest so they know it's their turn
+		// (Game.endTurn syncs BEFORE currPlayer is swapped, so guest
+		// would see stale currentTurn without this extra sync)
+		multiplayer.phase = 'playing';
+		await multiplayer.sync();
+
 		let msg;
 		try {
 			msg = await waitForMessage();
@@ -582,7 +588,7 @@ class Player {
 			document.getElementById("pass-button").classList.remove("noclick");
 		}
 		
-		if (this.controller instanceof ControllerAI) {
+		if (this.controller instanceof ControllerAI || this.controller instanceof ControllerNetwork) {
 			await this.controller.startTurn(this);
 		}
 	}
@@ -2185,9 +2191,12 @@ class Carousel {
 		}
 		
 		this.elem.classList.remove("hide");
+		// Show "Done" button if carousel can be exited early (e.g., redraw)
+		const doneBtn = document.getElementById('carousel-done');
+		if (doneBtn) doneBtn.classList.toggle('hide', !this.bExit);
 		ui.enablePlayer(true);
 	}
-	
+
 	// Called by the client to cycle cards displayed by n
 	shift(event, n){
 		(event || window.event).stopPropagation();
@@ -2249,6 +2258,8 @@ class Carousel {
 		for (let x of this.previews)
 			x.style.backgroundImage = "";
 		this.elem.classList.add("hide");
+		const doneBtn = document.getElementById('carousel-done');
+		if (doneBtn) doneBtn.classList.add('hide');
 		Carousel.clearCurrent();
 		ui.quitCarousel();
 	}

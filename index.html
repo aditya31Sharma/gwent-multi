@@ -119,6 +119,9 @@
 
 	<section id="click-background" class="noclick"></section>
 
+	<!-- Redraw phase banner (guest only) -->
+	<div id="redraw-banner" class="hide">Tap cards to swap (max 2), then press Done</div>
+
 	<section id="panel-left" class="panel">
 	
 		<div id="leader-op" class="leader-box">
@@ -271,6 +274,7 @@
 			<p></p>
 		</div>
 		<div></div>
+		<button id="carousel-done" class="hide" onclick="if(Carousel.curr)Carousel.curr.cancel()">Done Redrawing</button>
 	</section>
 	
 	
@@ -348,6 +352,10 @@
 	<a id="download-deck" class="deck-options">Download Deck</a>
 	<a id="download-json" style="display:none;"></a>
 	
+	<div id="deck-tabs">
+		<button class="deck-tab active" data-target="card-bank">Collection</button>
+		<button class="deck-tab" data-target="card-deck">Your Deck</button>
+	</div>
 	<h2 id="card-bank-title" class="card-contianer-title">Card Collection</h2>
 	<h2 id="card-deck-title" class="card-contianer-title">Cards in Deck</h2>
 	<div id="card-bank" class="card-array">
@@ -396,6 +404,24 @@
 		if (Math.abs(dx) > 40 && typeof Carousel !== 'undefined' && Carousel.curr)
 			Carousel.curr.shift(e, dx < 0 ? 1 : -1);
 	}, { passive: true });
+})();
+
+// Deck builder mobile tabs
+(function() {
+	var tabs = document.getElementById('deck-tabs');
+	if (!tabs) return;
+	tabs.addEventListener('click', function(e) {
+		var btn = e.target.closest('.deck-tab');
+		if (!btn) return;
+		tabs.querySelectorAll('.deck-tab').forEach(function(b) { b.classList.remove('active'); });
+		btn.classList.add('active');
+		var show = btn.dataset.target;
+		document.getElementById('card-bank').classList.toggle('hide', show !== 'card-bank');
+		document.getElementById('card-deck').classList.toggle('hide', show !== 'card-deck');
+		// Also toggle titles
+		document.getElementById('card-bank-title').classList.toggle('hide', show !== 'card-bank');
+		document.getElementById('card-deck-title').classList.toggle('hide', show !== 'card-deck');
+	});
 })();
 </script>
 </body>
