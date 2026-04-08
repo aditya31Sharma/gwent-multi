@@ -1426,33 +1426,48 @@ main {
   #carousel > div:nth-child(3) { font-size: 12px; padding: 12px 14px; }
   #carousel-done { bottom: 20px; padding: 12px 28px; font-size: 13px; }
 
-  /* ── Deck customization: mobile flow layout ── */
+  /* ── Deck customization: mobile layout ── */
   #deck-customization {
-    padding: 12px 8px;
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  /* Override desktop absolute positioning */
-  #deck-customization #faction-title,
-  #deck-customization #faction-description,
-  #deck-customization .deck-options,
-  #deck-customization .card-contianer-title,
-  #deck-customization .card-array,
-  #deck-customization #card-leader,
-  #deck-customization #deck-stats,
-  #deck-customization #start-game,
-  #deck-customization #upload-deck,
-  #deck-customization #change-faction,
-  #deck-customization #download-deck {
+  /* All children: flow layout instead of desktop absolute */
+  #deck-customization > * {
     position: relative !important;
     top: auto !important;
     left: auto !important;
     right: auto !important;
+    bottom: auto !important;
     width: 100% !important;
     max-width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  #deck-customization #faction-title {
+    text-align: center;
+    height: auto !important;
+  }
+  #deck-customization #faction-title h1 {
+    font-size: 18px !important;
+    position: relative !important;
+  }
+  #deck-customization #faction-description {
+    text-align: center;
+    font-size: 11px;
+    height: auto !important;
+  }
+
+  /* Action buttons: row */
+  #deck-customization .deck-options {
+    display: inline-block !important;
+    width: auto !important;
+    margin: 2px 4px;
+    padding: 8px 14px;
+    font-size: 11px;
   }
 
   /* Deck tabs visible on mobile */
@@ -1464,6 +1479,7 @@ main {
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
+    margin: 4px 0;
   }
   .deck-tab {
     flex: 1;
@@ -1478,43 +1494,98 @@ main {
     border: none;
     cursor: pointer;
     text-align: center;
-    transition: background 0.15s, color 0.15s;
   }
   .deck-tab.active {
     background: var(--surface-3);
     color: var(--gold);
   }
 
-  /* Card arrays: bigger cards, more space */
-  .card-array {
-    max-height: 55vh;
-    padding: 8px;
-    gap: 8px;
-    border-radius: 8px;
-    width: 100% !important;
-  }
-  .card-array .card-lg {
-    width: 70px;
-    height: 131px;
-    border-radius: 5px;
-  }
-
-  /* Hide desktop-only titles when tabs are visible */
+  /* Hide desktop-only titles when tabs exist */
   #card-bank-title, #card-deck-title {
     display: none !important;
   }
 
-  #card-leader {
-    width: 100% !important;
+  /* Card arrays: 3 cols, large cards with visible count */
+  .card-array {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 8px !important;
+    border-radius: 8px;
+    align-content: start;
+    justify-items: center;
   }
-  #deck-stats {
+
+  .card-array .card-lg {
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 110px;
+    height: auto !important;
+    aspect-ratio: 2 / 3.5;
+    border-radius: 6px;
+    background-size: cover !important;
+    background-position: center !important;
   }
-  #start-game {
-    padding: 14px 32px;
-    font-size: 13px;
+
+  /* Card count badge — large and visible */
+  .card-array .card-lg > div {
+    position: absolute !important;
+    bottom: 6px !important;
+    right: 6px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--gold) !important;
+    background: rgba(0,0,0,0.75) !important;
+    padding: 2px 8px !important;
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+    top: auto !important;
+    left: auto !important;
     width: auto !important;
+    height: auto !important;
+  }
+
+  /* Leader section */
+  #card-leader {
+    text-align: center;
+    height: auto !important;
+    padding: 8px 0;
+  }
+  #card-leader p {
+    position: relative !important;
+  }
+  #card-leader > div {
+    display: inline-block;
+  }
+
+  /* Stats */
+  #deck-stats {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 2px 12px;
+    font-size: 12px;
+    padding: 8px 16px !important;
+    max-width: 340px !important;
+    height: auto !important;
+  }
+  #deck-stats > p {
+    position: relative !important;
+    height: auto !important;
+    width: auto !important;
+    top: auto !important;
+    left: auto !important;
+    padding: 4px 0 4px 22px !important;
+  }
+
+  /* Start button */
+  #start-game {
+    padding: 16px 32px !important;
+    font-size: 14px !important;
+    width: 80% !important;
+    max-width: 300px !important;
+    height: auto !important;
+    white-space: nowrap;
   }
 }
 
