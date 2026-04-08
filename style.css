@@ -1500,9 +1500,9 @@ main {
     color: var(--gold);
   }
 
-  /* Hide desktop-only titles when tabs exist */
+  /* Titles hidden on mobile — tabs replace them */
   #card-bank-title, #card-deck-title {
-    display: none !important;
+    display: none;
   }
 
   /* Card arrays: 3 cols, large cards with visible count */

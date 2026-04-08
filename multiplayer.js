@@ -292,6 +292,8 @@ function renderGuestPhase(state) {
 		// First state arrival: dismiss the lobby waiting overlay, reveal game board
 		document.getElementById('mp-lobby').classList.add('hide');
 		document.getElementById('mp-waiting').classList.add('hide');
+		document.getElementById('deck-customization').classList.add('hide');
+		document.querySelector('main').classList.remove('hide');
 		if (banner) banner.classList.remove('hide');
 	} else {
 		if (banner) banner.classList.add('hide');

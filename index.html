@@ -410,17 +410,34 @@
 (function() {
 	var tabs = document.getElementById('deck-tabs');
 	if (!tabs) return;
+	function isMobile() { return window.innerWidth <= 768; }
+	function applyTab(show) {
+		if (!isMobile()) return; // desktop: both visible always
+		document.getElementById('card-bank').style.display = (show === 'card-bank') ? '' : 'none';
+		document.getElementById('card-deck').style.display = (show === 'card-deck') ? '' : 'none';
+		document.getElementById('card-bank-title').style.display = (show === 'card-bank') ? '' : 'none';
+		document.getElementById('card-deck-title').style.display = (show === 'card-deck') ? '' : 'none';
+	}
 	tabs.addEventListener('click', function(e) {
 		var btn = e.target.closest('.deck-tab');
 		if (!btn) return;
 		tabs.querySelectorAll('.deck-tab').forEach(function(b) { b.classList.remove('active'); });
 		btn.classList.add('active');
-		var show = btn.dataset.target;
-		document.getElementById('card-bank').classList.toggle('hide', show !== 'card-bank');
-		document.getElementById('card-deck').classList.toggle('hide', show !== 'card-deck');
-		// Also toggle titles
-		document.getElementById('card-bank-title').classList.toggle('hide', show !== 'card-bank');
-		document.getElementById('card-deck-title').classList.toggle('hide', show !== 'card-deck');
+		applyTab(btn.dataset.target);
+	});
+	// On initial load and resize: apply default tab state
+	applyTab('card-bank');
+	window.addEventListener('resize', function() {
+		if (!isMobile()) {
+			// Desktop: show both
+			document.getElementById('card-bank').style.display = '';
+			document.getElementById('card-deck').style.display = '';
+			document.getElementById('card-bank-title').style.display = '';
+			document.getElementById('card-deck-title').style.display = '';
+		} else {
+			var active = tabs.querySelector('.deck-tab.active');
+			applyTab(active ? active.dataset.target : 'card-bank');
+		}
 	});
 })();
 </script>
