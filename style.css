@@ -1317,10 +1317,10 @@ main {
 
 @media (max-width: 768px) {
   :root {
-    --card-h: 64px;
-    --card-w: 44px;
+    --card-h: 76px;
+    --card-w: 52px;
     --card-r: 3px;
-    --hand-h: 96px;
+    --hand-h: 110px;
     --row-h: auto;
   }
 
@@ -1333,75 +1333,111 @@ main {
       "hand";
   }
 
-  /* Stats: compact horizontal bar */
+  /* ── Stats: TWO separate bars (opp top, me embedded in hand) ── */
   #panel-left {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 8px;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
     border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border);
     overflow: visible;
     background: var(--bg);
   }
 
-  .leader-box { width: 38px; height: 30px; border-radius: 3px; }
+  /* Each stat block is a full-width bar */
   .stats {
-    flex: 1; min-width: 110px;
-    padding: 5px 8px;
-    border-radius: 4px;
+    width: 100%;
+    padding: 6px 12px;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
-  .profile-img { width: 24px; height: 24px; margin-right: 6px; }
-  .profile-img > div > div { width: 12px; height: 12px; }
-  .score-total { width: 26px; height: 26px; font-size: 12px; top: 4px; right: 6px; }
-  .name { font-size: 10px; }
-  .deck-name { font-size: 8px; }
-  .hand-count { font-size: 9px; background-size: 11px; padding-left: 15px; }
-  .gem { width: 11px; height: 11px; }
-  #weather { min-height: 26px; flex: 0 0 auto; padding: 2px; border-radius: 4px; }
-  #pass-button {
-    width: auto;
-    padding: 8px 18px;
-    font-size: 11px;
-    min-height: 36px;
-    border-radius: 5px;
-  }
-  #passed-me.passed, #passed-op.passed { font-size: 8px; }
 
-  /* Board: scrollable, taller rows */
+  .profile-img { width: 28px; height: 28px; margin-right: 4px; flex-shrink: 0; }
+  .profile-img > div > div { width: 12px; height: 12px; }
+  .score-total { position: static; width: 30px; height: 30px; font-size: 14px; flex-shrink: 0; margin-left: auto; }
+  .name { font-size: 11px; flex-shrink: 1; min-width: 0; }
+  .deck-name { font-size: 8px; }
+  .hand-count { font-size: 10px; background-size: 12px; padding-left: 16px; flex-shrink: 0; }
+  .gem { width: 12px; height: 12px; flex-shrink: 0; }
+
+  /* Leader box: inline with stats */
+  .leader-box {
+    width: 36px; height: 28px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    order: -1;
+  }
+
+  /* Weather: compact inline */
+  #weather {
+    min-height: 0; height: auto;
+    padding: 2px 12px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    width: 100%;
+  }
+
+  /* Pass button: in stats area */
+  #pass-button {
+    width: 100%;
+    padding: 10px 20px;
+    font-size: 12px;
+    min-height: 40px;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--gold-dim);
+    background: var(--surface-2);
+    order: 100;
+  }
+
+  #passed-me.passed, #passed-op.passed { font-size: 9px; }
+
+  /* ── Board: scrollable, BIG rows ── */
   #panel-mid {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+
   .field-row {
-    min-height: 80px;  /* ~90px from Figma, 80px min for flexibility */
+    min-height: 92px;
   }
+
   .field-row::before { font-size: 9px; left: 30px; top: 2px; }
-  .row-score { width: 28px; font-size: 13px; }
-  .row-special { width: 38px; }
+  .row-score { width: 30px; font-size: 14px; }
+  .row-special { width: 40px; }
   .row-cards {
-    padding: 3px 4px;
-    gap: 2px;
+    padding: 4px 6px;
+    gap: 3px;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Hand: bigger cards, smooth scroll */
-  #field-hand { padding: 4px 6px; }
+  /* ── Hand: big cards, smooth scroll ── */
+  #field-hand { padding: 6px 8px; }
   #hand-row {
-    height: calc(var(--hand-h) - 8px);
-    gap: 4px;
+    height: calc(var(--hand-h) - 12px);
+    gap: 5px;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
   }
   #hand-row > .card {
     scroll-snap-align: start;
+    /* Hand cards even bigger than board cards */
+    height: 94px !important;
+    width: 65px !important;
   }
 
-  .card-selectable > .card:hover {
-    transform: translateY(-6px) scale(1.04);
+  .card-selectable > .card:hover,
+  .card-selectable > .card:active {
+    transform: translateY(-8px) scale(1.06);
   }
 
-  /* Hide right panel on mobile */
+  /* ── Hide right panel on mobile ── */
   #panel-right { display: none; }
 
   /* Preview hidden on mobile */

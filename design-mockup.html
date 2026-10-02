@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=390, initial-scale=1.0"/>
+<title>Gwent Mobile — Design Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0908;
+  --surface: #151110;
+  --surface-2: #1e1814;
+  --surface-3: #28201a;
+  --border: #342a1e;
+  --border-subtle: #241c14;
+  --gold: #c8a050;
+  --gold-bright: #ecd070;
+  --gold-dim: #6a5030;
+  --gold-glow: rgba(200,160,80,0.25);
+  --text: #e0d4be;
+  --text-2: #a09078;
+  --text-3: #685840;
+  --red: #c84030;
+  --green: #60a848;
+  --font-d: 'Cinzel', serif;
+  --font-b: 'Outfit', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #000; }
+body {
+  font-family: var(--font-b);
+  color: var(--text);
+  background: var(--bg);
+  max-width: 390px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── Page navigation ── */
+.page-nav {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  z-index: 9999;
+  display: flex; gap: 2px; padding: 4px;
+  background: #000; border-bottom: 1px solid #333;
+  max-width: 390px; width: 100%;
+  overflow-x: auto;
+}
+.page-nav button {
+  padding: 6px 10px; font-size: 10px; font-family: var(--font-b);
+  background: #1a1a1a; color: #888; border: 1px solid #333;
+  border-radius: 3px; cursor: pointer; white-space: nowrap;
+}
+.page-nav button.active { background: #2a1a08; color: var(--gold); border-color: var(--gold-dim); }
+
+.screen { display: none; min-height: 100vh; padding-top: 36px; }
+.screen.active { display: block; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 1: LANDING
+   ═══════════════════════════════════════════════ */
+.landing {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(ellipse 90% 50% at 50% 40%, #1e1000 0%, var(--bg) 70%);
+  padding: 60px 32px 40px;
+  gap: 0;
+}
+.landing-logo {
+  font-family: var(--font-d); font-size: 42px; font-weight: 700;
+  letter-spacing: 0.35em; color: var(--gold);
+  text-shadow: 0 0 40px rgba(200,160,80,0.3), 0 2px 0 #2a1400;
+  margin-bottom: 4px;
+}
+.landing-sub {
+  font-size: 11px; letter-spacing: 0.4em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 48px;
+}
+.landing-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  width: 100%; margin-bottom: 32px;
+}
+.landing-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 28px 16px 22px;
+  background: var(--surface); border: 1px solid var(--border-subtle);
+  border-radius: 10px; cursor: pointer;
+  transition: all 0.2s;
+}
+.landing-card:hover { border-color: var(--gold-dim); background: var(--surface-2); }
+.landing-card-icon { font-size: 28px; opacity: 0.7; }
+.landing-card-title {
+  font-family: var(--font-d); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold);
+}
+.landing-card-desc { font-size: 11px; color: var(--text-3); text-align: center; line-height: 1.4; }
+.landing-solo {
+  font-size: 12px; color: var(--text-3);
+  text-decoration: underline; text-decoration-color: var(--border);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 2: LOBBY ROOM
+   ═══════════════════════════════════════════════ */
+.lobby {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(ellipse 80% 50% at 50% 35%, #1a0e00 0%, var(--bg) 70%);
+  padding: 60px 24px 40px;
+  gap: 24px;
+}
+.lobby-title {
+  font-family: var(--font-d); font-size: 18px; font-weight: 600;
+  letter-spacing: 0.12em; color: var(--gold);
+}
+.lobby-code-section { text-align: center; }
+.lobby-code-label { font-size: 11px; color: var(--text-3); margin-bottom: 8px; }
+.lobby-code {
+  font-family: var(--font-d); font-size: 32px; font-weight: 700;
+  letter-spacing: 0.45em; color: var(--gold-bright);
+  background: #0a0600; border: 1px solid var(--gold-dim);
+  border-radius: 6px; padding: 12px 20px;
+  text-shadow: 0 0 12px rgba(240,208,144,0.3);
+}
+.lobby-players {
+  display: flex; align-items: center; gap: 16px;
+  width: 100%;
+}
+.lobby-slot {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  padding: 20px 12px;
+  background: var(--surface); border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+.lobby-slot.connected { border-color: var(--gold-dim); }
+.lobby-slot.waiting { opacity: 0.35; }
+.lobby-avatar { font-size: 24px; opacity: 0.5; }
+.lobby-name {
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.lobby-ready-badge {
+  font-size: 9px; padding: 3px 10px;
+  border: 1px solid var(--border-subtle); border-radius: 3px;
+  color: var(--text-3);
+}
+.lobby-ready-badge.ready {
+  color: var(--green); border-color: #406020; background: #0c1808;
+}
+.lobby-vs {
+  font-size: 10px; letter-spacing: 0.3em; color: var(--text-3);
+  flex-shrink: 0;
+}
+.lobby-status {
+  font-size: 12px; color: var(--text-3); text-align: center;
+}
+.lobby-btn {
+  width: 100%; padding: 16px;
+  font-family: var(--font-d); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold-bright); background: var(--surface-2);
+  border: 1px solid var(--gold); border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 3: DECK BUILDER (Mobile Tabs)
+   ═══════════════════════════════════════════════ */
+.deck-builder {
+  display: flex; flex-direction: column;
+  min-height: 100vh; background: var(--bg);
+  padding-top: 36px;
+}
+.db-header {
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.db-faction {
+  font-family: var(--font-d); font-size: 16px; font-weight: 600;
+  color: var(--gold); text-align: center; margin-bottom: 4px;
+}
+.db-faction-desc {
+  font-size: 10px; color: var(--text-3); text-align: center;
+  line-height: 1.5; max-width: 300px; margin: 0 auto;
+}
+.db-actions {
+  display: flex; gap: 6px; justify-content: center;
+  padding: 8px 16px;
+}
+.db-action-btn {
+  padding: 6px 14px; font-size: 10px; font-weight: 500;
+  color: var(--text-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.db-tabs {
+  display: flex; border-bottom: 2px solid var(--border);
+  background: var(--surface);
+}
+.db-tab {
+  flex: 1; padding: 12px; text-align: center;
+  font-family: var(--font-d); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3); background: none; border: none;
+  cursor: pointer; position: relative;
+}
+.db-tab.active {
+  color: var(--gold);
+}
+.db-tab.active::after {
+  content: ''; position: absolute;
+  bottom: -2px; left: 20%; width: 60%; height: 2px;
+  background: var(--gold);
+}
+.db-card-grid {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  align-content: start;
+}
+.db-card {
+  aspect-ratio: 2/3.7; border-radius: 6px;
+  background: #2a1e12; border: 1px solid var(--border-subtle);
+  position: relative; overflow: hidden;
+  background-size: cover; background-position: center;
+}
+.db-card.selected { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.db-card-count {
+  position: absolute; bottom: 4px; right: 4px;
+  font-size: 10px; font-weight: 600;
+  color: var(--gold-dim); background: rgba(0,0,0,0.7);
+  padding: 1px 5px; border-radius: 3px;
+}
+.db-leader-section {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border-subtle);
+  display: flex; align-items: center; gap: 12px;
+}
+.db-leader-card {
+  width: 44px; height: 64px; border-radius: 4px;
+  background: #2a1e12; border: 1px solid var(--gold-dim);
+  flex-shrink: 0;
+}
+.db-leader-info { flex: 1; }
+.db-leader-label {
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-3);
+}
+.db-leader-name {
+  font-family: var(--font-d); font-size: 12px; color: var(--gold);
+}
+.db-stats-bar {
+  display: flex; justify-content: space-around;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-subtle);
+}
+.db-stat { text-align: center; }
+.db-stat-val {
+  font-family: var(--font-d); font-size: 14px; font-weight: 700;
+  color: var(--text);
+}
+.db-stat-val.invalid { color: var(--red); }
+.db-stat-label { font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.db-start-btn {
+  margin: 12px 16px;
+  padding: 14px;
+  font-family: var(--font-d); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold-bright); background: var(--surface-2);
+  border: 1px solid var(--gold); border-radius: 8px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 4: CARD REDRAW
+   ═══════════════════════════════════════════════ */
+.redraw {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: rgba(6,4,2,0.97);
+  padding: 60px 16px 40px;
+  gap: 20px;
+}
+.redraw-title {
+  font-family: var(--font-d); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.08em; color: var(--gold);
+  text-align: center;
+}
+.redraw-hint {
+  font-size: 11px; color: var(--text-3); text-align: center;
+  line-height: 1.5;
+}
+.redraw-carousel {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; overflow: hidden;
+  justify-content: center;
+}
+.redraw-card {
+  border-radius: 8px; background: #2a1e12;
+  border: 2px solid transparent;
+  flex-shrink: 0; transition: all 0.25s;
+  background-size: cover; background-position: center;
+}
+.redraw-card.far { width: 48px; height: 90px; opacity: 0.3; }
+.redraw-card.near { width: 72px; height: 135px; opacity: 0.65; }
+.redraw-card.center {
+  width: 120px; height: 225px;
+  border-color: var(--gold);
+  box-shadow: 0 0 24px var(--gold-glow), 0 8px 24px rgba(0,0,0,0.5);
+  opacity: 1;
+}
+.redraw-counter {
+  font-family: var(--font-d); font-size: 12px;
+  color: var(--text-2); letter-spacing: 0.05em;
+}
+.redraw-done-btn {
+  width: 80%; padding: 14px;
+  font-family: var(--font-d); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gold-bright); background: var(--surface-2);
+  border: 1px solid var(--gold); border-radius: 8px;
+  text-align: center; cursor: pointer;
+  margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 5: GAME BOARD (Mobile)
+   ═══════════════════════════════════════════════ */
+.board-screen {
+  display: flex; flex-direction: column;
+  height: 100vh;
+  background: var(--surface);
+  padding-top: 36px;
+}
+
+/* Top bar — opponent info */
+.board-opp-bar {
+  display: flex; align-items: center;
+  padding: 6px 10px; gap: 8px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.board-opp-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #2a1e12; border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.board-opp-info { flex: 1; min-width: 0; }
+.board-opp-name {
+  font-family: var(--font-d); font-size: 10px; font-weight: 600;
+  color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-opp-faction { font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.board-opp-stats { display: flex; gap: 8px; align-items: center; }
+.board-gem {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #402020; border: 1px solid #5a2020;
+}
+.board-gem.on { background: #c03030; border-color: #e04040; box-shadow: 0 0 4px rgba(200,40,40,0.4); }
+.board-hand-count {
+  font-size: 10px; font-weight: 600; color: var(--text-2);
+}
+.board-score-badge {
+  font-family: var(--font-d); font-size: 14px; font-weight: 700;
+  color: var(--text); background: var(--surface-3);
+  border: 1px solid var(--border); border-radius: 6px;
+  width: 32px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+.board-score-badge.winning { border-color: var(--gold-dim); color: var(--gold); }
+
+/* Board rows */
+.board-rows {
+  flex: 1; display: flex; flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.board-row {
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 68px;
+  position: relative;
+}
+.board-row.divider {
+  border-bottom: 2px solid var(--gold-dim);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.board-row-label {
+  position: absolute; top: 2px; left: 32px;
+  font-size: 8px; font-weight: 500; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--text-3); opacity: 0.5;
+}
+.board-row-score {
+  width: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-size: 13px; font-weight: 700;
+  color: var(--text-2); background: rgba(0,0,0,0.2);
+  border-right: 1px solid var(--border-subtle);
+}
+.board-row-special {
+  width: 36px; flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  display: flex; align-items: center; justify-content: center;
+}
+.board-row-cards {
+  flex: 1; display: flex; align-items: center;
+  padding: 3px 4px; gap: 2px;
+  overflow-x: auto;
+}
+.board-mini-card {
+  width: 44px; height: 64px; border-radius: 3px;
+  background: #2a1e12; flex-shrink: 0;
+  background-size: cover; background-position: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  position: relative;
+}
+.board-mini-card .power {
+  position: absolute; top: -1px; left: -1px;
+  font-size: 8px; font-weight: 700; font-family: var(--font-d);
+  color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.5); border-radius: 2px;
+  padding: 1px 3px;
+}
+.board-mini-card .power.buffed { color: #e0c040; }
+.board-mini-card .power.debuffed { color: var(--red); }
+
+/* Bottom bar — player info + pass */
+.board-me-bar {
+  display: flex; align-items: center;
+  padding: 6px 10px; gap: 8px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.board-pass-btn {
+  padding: 8px 16px;
+  font-family: var(--font-d); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); background: var(--surface-3);
+  border: 1px solid var(--gold-dim); border-radius: 6px;
+  cursor: pointer; flex-shrink: 0;
+}
+.board-turn-indicator {
+  position: absolute; top: 38px; left: 50%; transform: translateX(-50%);
+  padding: 6px 16px;
+  font-family: var(--font-d); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gold-bright); background: rgba(8,6,4,0.9);
+  border: 1px solid var(--gold-dim); border-radius: 4px;
+  z-index: 10;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--gold-glow); }
+  50% { box-shadow: 0 0 16px rgba(200,160,80,0.4); }
+}
+
+/* Hand */
+.board-hand {
+  background: linear-gradient(0deg, #080604 0%, var(--surface-2) 100%);
+  border-top: 1px solid var(--border);
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+.board-hand-row {
+  display: flex; gap: 4px; align-items: center;
+  overflow-x: auto; padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.board-hand-row::-webkit-scrollbar { display: none; }
+.board-hand-card {
+  width: 52px; height: 76px; border-radius: 4px;
+  background: #2a1e12; flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  background-size: cover; background-position: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+}
+.board-hand-card:active {
+  transform: translateY(-6px) scale(1.04);
+  border-color: var(--gold);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4), 0 0 10px var(--gold-glow);
+}
+.board-hand-card .power {
+  position: absolute; top: -1px; left: -1px;
+  font-size: 9px; font-weight: 700; font-family: var(--font-d);
+  color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.5); border-radius: 2px;
+  padding: 1px 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 6: END SCREEN
+   ═══════════════════════════════════════════════ */
+.end-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: rgba(6,4,2,0.97);
+  padding: 60px 24px 40px;
+  gap: 20px;
+}
+.end-result {
+  font-family: var(--font-d); font-size: 28px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--gold-bright);
+  text-shadow: 0 0 20px var(--gold-glow);
+}
+.end-result.lost { color: var(--red); text-shadow: 0 0 20px rgba(200,40,40,0.3); }
+.end-table {
+  width: 100%; border-collapse: collapse;
+}
+.end-table th {
+  font-family: var(--font-b); font-size: 10px;
+  color: var(--text-3); padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.end-table td {
+  font-family: var(--font-d); font-size: 16px;
+  color: var(--text); text-align: center; padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.end-table td:first-child {
+  font-size: 12px; color: var(--gold); text-align: right;
+}
+.end-table .winner { color: var(--gold-bright); font-weight: 700; }
+.end-actions { display: flex; gap: 10px; width: 100%; }
+.end-btn {
+  flex: 1; padding: 14px;
+  font-family: var(--font-d); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  text-align: center;
+  border-radius: 8px; cursor: pointer;
+}
+.end-btn-primary {
+  color: var(--gold-bright); background: var(--surface-2);
+  border: 1px solid var(--gold);
+}
+.end-btn-secondary {
+  color: var(--text-2); background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 7: ROW PICKER (Agile Cards)
+   ═══════════════════════════════════════════════ */
+.row-picker-overlay {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: rgba(6,4,2,0.92);
+  padding: 60px 32px 40px;
+  gap: 16px;
+}
+.rp-title {
+  font-family: var(--font-d); font-size: 16px; font-weight: 600;
+  color: var(--gold); letter-spacing: 0.08em;
+}
+.rp-card-preview {
+  width: 100px; height: 187px; border-radius: 8px;
+  background: #2a1e12; border: 1px solid var(--gold-dim);
+  margin: 8px 0;
+}
+.rp-options { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.rp-option {
+  padding: 16px; text-align: center;
+  font-family: var(--font-d); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer;
+}
+.rp-option:active { border-color: var(--gold); background: var(--surface-3); }
+.rp-cancel {
+  font-size: 11px; color: var(--text-3);
+  text-decoration: underline; cursor: pointer;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- Page navigation -->
+<div class="page-nav">
+  <button class="active" onclick="show('landing')">Landing</button>
+  <button onclick="show('lobby')">Lobby</button>
+  <button onclick="show('deckbuilder')">Deck</button>
+  <button onclick="show('redraw')">Redraw</button>
+  <button onclick="show('board')">Board</button>
+  <button onclick="show('endscreen')">End</button>
+  <button onclick="show('rowpicker')">Row Pick</button>
+</div>
+
+<!-- 1. Landing -->
+<div class="screen active" id="landing">
+  <div class="landing">
+    <div class="landing-logo">GWENT</div>
+    <div class="landing-sub">Multiplayer</div>
+    <div class="landing-cards">
+      <div class="landing-card">
+        <div class="landing-card-icon">&#9876;</div>
+        <div class="landing-card-title">Create Room</div>
+        <div class="landing-card-desc">Host a game &middot; share your code</div>
+      </div>
+      <div class="landing-card">
+        <div class="landing-card-icon">&#9960;</div>
+        <div class="landing-card-title">Join Room</div>
+        <div class="landing-card-desc">Enter a friend's room code</div>
+      </div>
+    </div>
+    <div class="landing-solo">Play Solo vs AI</div>
+  </div>
+</div>
+
+<!-- 2. Lobby -->
+<div class="screen" id="lobby">
+  <div class="lobby">
+    <div class="lobby-title">Lobby</div>
+    <div class="lobby-code-section">
+      <div class="lobby-code-label">Share this code with your opponent</div>
+      <div class="lobby-code">AFT4YB</div>
+    </div>
+    <div class="lobby-players">
+      <div class="lobby-slot connected">
+        <div class="lobby-avatar">&#9823;</div>
+        <div class="lobby-name">You</div>
+        <div class="lobby-ready-badge ready">READY</div>
+      </div>
+      <div class="lobby-vs">VS</div>
+      <div class="lobby-slot connected">
+        <div class="lobby-avatar">&#9823;</div>
+        <div class="lobby-name">Opponent</div>
+        <div class="lobby-ready-badge">&middot;</div>
+      </div>
+    </div>
+    <div class="lobby-status">Waiting for opponent to ready up&hellip;</div>
+    <div class="lobby-btn">Ready Up</div>
+  </div>
+</div>
+
+<!-- 3. Deck Builder -->
+<div class="screen" id="deckbuilder">
+  <div class="deck-builder">
+    <div class="db-header">
+      <div class="db-faction">Northern Realms</div>
+      <div class="db-faction-desc">Draw a card from your deck whenever you win a round</div>
+    </div>
+    <div class="db-actions">
+      <div class="db-action-btn">Change Faction</div>
+      <div class="db-action-btn">Upload Deck</div>
+      <div class="db-action-btn">Download</div>
+    </div>
+    <div class="db-tabs">
+      <button class="db-tab active">Collection</button>
+      <button class="db-tab">Your Deck <span style="opacity:0.5">(24)</span></button>
+    </div>
+    <div class="db-card-grid">
+      <div class="db-card" style="background-color:#3a2a18"><div class="db-card-count">x3</div></div>
+      <div class="db-card selected" style="background-color:#2e2418"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#342818"><div class="db-card-count">x2</div></div>
+      <div class="db-card" style="background-color:#302218"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#382a18"><div class="db-card-count">x3</div></div>
+      <div class="db-card" style="background-color:#2c2018"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#362618"><div class="db-card-count">x2</div></div>
+      <div class="db-card" style="background-color:#302418"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#3a2c18"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#2e2218"><div class="db-card-count">x2</div></div>
+      <div class="db-card" style="background-color:#342818"><div class="db-card-count">x1</div></div>
+      <div class="db-card" style="background-color:#302018"><div class="db-card-count">x3</div></div>
+    </div>
+    <div class="db-leader-section">
+      <div class="db-leader-card"></div>
+      <div class="db-leader-info">
+        <div class="db-leader-label">Leader</div>
+        <div class="db-leader-name">Foltest: King of Temeria</div>
+      </div>
+    </div>
+    <div class="db-stats-bar">
+      <div class="db-stat"><div class="db-stat-val">24</div><div class="db-stat-label">Cards</div></div>
+      <div class="db-stat"><div class="db-stat-val invalid">18</div><div class="db-stat-label">Units</div></div>
+      <div class="db-stat"><div class="db-stat-val">6</div><div class="db-stat-label">Special</div></div>
+      <div class="db-stat"><div class="db-stat-val">142</div><div class="db-stat-label">Strength</div></div>
+      <div class="db-stat"><div class="db-stat-val">3</div><div class="db-stat-label">Hero</div></div>
+    </div>
+    <div class="db-start-btn">Start Game</div>
+  </div>
+</div>
+
+<!-- 4. Redraw -->
+<div class="screen" id="redraw">
+  <div class="redraw">
+    <div class="redraw-title">Choose Cards to Redraw</div>
+    <div class="redraw-hint">Tap the center card to swap it with a random card from your deck. Swipe left/right to browse.</div>
+    <div class="redraw-carousel">
+      <div class="redraw-card far" style="background-color:#2a1e12"></div>
+      <div class="redraw-card near" style="background-color:#302418"></div>
+      <div class="redraw-card center" style="background-color:#3a2c1e"></div>
+      <div class="redraw-card near" style="background-color:#302418"></div>
+      <div class="redraw-card far" style="background-color:#2a1e12"></div>
+    </div>
+    <div class="redraw-counter">Swaps remaining: 2 / 2</div>
+    <div class="redraw-done-btn">Done Redrawing</div>
+  </div>
+</div>
+
+<!-- 5. Game Board -->
+<div class="screen" id="board">
+  <div class="board-screen">
+    <!-- Turn indicator -->
+    <div class="board-turn-indicator">Your Turn</div>
+
+    <!-- Opponent bar -->
+    <div class="board-opp-bar">
+      <div class="board-opp-avatar"></div>
+      <div class="board-opp-info">
+        <div class="board-opp-name">Player 2</div>
+        <div class="board-opp-faction">Northern Realms</div>
+      </div>
+      <div class="board-opp-stats">
+        <div class="board-gem on"></div>
+        <div class="board-gem on"></div>
+        <div class="board-hand-count">8 cards</div>
+      </div>
+      <div class="board-score-badge">12</div>
+    </div>
+
+    <!-- Board rows -->
+    <div class="board-rows">
+      <!-- Opponent rows -->
+      <div class="board-row">
+        <div class="board-row-label">SIEGE</div>
+        <div class="board-row-score">12</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards">
+          <div class="board-mini-card" style="background-color:#3a2818"><div class="power">4</div></div>
+          <div class="board-mini-card" style="background-color:#342418"><div class="power buffed">8</div></div>
+          <div class="board-mini-card" style="background-color:#302018"><div class="power">6</div></div>
+        </div>
+      </div>
+      <div class="board-row">
+        <div class="board-row-label">RANGED</div>
+        <div class="board-row-score">0</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards"></div>
+      </div>
+      <div class="board-row divider">
+        <div class="board-row-label">CLOSE</div>
+        <div class="board-row-score">0</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards"></div>
+      </div>
+
+      <!-- Player rows -->
+      <div class="board-row">
+        <div class="board-row-label">CLOSE</div>
+        <div class="board-row-score">5</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards">
+          <div class="board-mini-card" style="background-color:#3a2c18"><div class="power">5</div></div>
+        </div>
+      </div>
+      <div class="board-row">
+        <div class="board-row-label">RANGED</div>
+        <div class="board-row-score">0</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards"></div>
+      </div>
+      <div class="board-row">
+        <div class="board-row-label">SIEGE</div>
+        <div class="board-row-score">0</div>
+        <div class="board-row-special"></div>
+        <div class="board-row-cards"></div>
+      </div>
+    </div>
+
+    <!-- Player bar -->
+    <div class="board-me-bar">
+      <div class="board-opp-avatar"></div>
+      <div class="board-opp-info">
+        <div class="board-opp-name" style="color:var(--gold-bright)">Player 1</div>
+        <div class="board-opp-faction">Northern Realms</div>
+      </div>
+      <div class="board-opp-stats">
+        <div class="board-gem on"></div>
+        <div class="board-gem on"></div>
+      </div>
+      <div class="board-score-badge winning">5</div>
+      <div class="board-pass-btn">Pass</div>
+    </div>
+
+    <!-- Hand -->
+    <div class="board-hand">
+      <div class="board-hand-row">
+        <div class="board-hand-card" style="background-color:#3a2c1e"><div class="power">4</div></div>
+        <div class="board-hand-card" style="background-color:#342618"><div class="power">6</div></div>
+        <div class="board-hand-card" style="background-color:#302018"><div class="power">3</div></div>
+        <div class="board-hand-card" style="background-color:#382a18"><div class="power">8</div></div>
+        <div class="board-hand-card" style="background-color:#2e2218"><div class="power">5</div></div>
+        <div class="board-hand-card" style="background-color:#3a2e1e"><div class="power">7</div></div>
+        <div class="board-hand-card" style="background-color:#342418"><div class="power">2</div></div>
+        <div class="board-hand-card" style="background-color:#302218"><div class="power">15</div></div>
+        <div class="board-hand-card" style="background-color:#382c18"><div class="power">4</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. End Screen -->
+<div class="screen" id="endscreen">
+  <div class="end-screen">
+    <div class="end-result">Victory</div>
+    <table class="end-table">
+      <tr><th></th><th>R1</th><th>R2</th><th>R3</th></tr>
+      <tr><td>Player 1</td><td class="winner">24</td><td>8</td><td class="winner">31</td></tr>
+      <tr><td>Player 2</td><td>18</td><td class="winner">22</td><td>15</td></tr>
+    </table>
+    <div class="end-actions">
+      <div class="end-btn end-btn-secondary">Customize</div>
+      <div class="end-btn end-btn-primary">Rematch</div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. Row Picker -->
+<div class="screen" id="rowpicker">
+  <div class="row-picker-overlay">
+    <div class="rp-title">Choose Row</div>
+    <div class="rp-card-preview"></div>
+    <div class="rp-options">
+      <div class="rp-option">Close Combat</div>
+      <div class="rp-option">Ranged</div>
+    </div>
+    <div class="rp-cancel">Cancel</div>
+  </div>
+</div>
+
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.page-nav button').forEach(b => b.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+}
+// Auto-show screen from URL search param ?screen=xxx
+var sp = new URLSearchParams(window.location.search);
+if (sp.get('screen')) {
+  document.addEventListener('DOMContentLoaded', function() { show(sp.get('screen')); });
+}
+</script>
+</body>
+</html>
